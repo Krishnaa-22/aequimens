@@ -4,6 +4,7 @@ import type { Answers } from '../types';
 import { buildQuestionSequence, recordAnswer, estimateRemaining } from '../engine/branching';
 import { CORE_QUESTIONS, FOLLOW_UP_INTRO } from '../engine/questions';
 import { runCheckIn, toDaySummary } from '../engine/scoring';
+import { evaluateAchievements } from '../engine/insights';
 import { storage } from '../data/localStorage';
 import { QuestionCard } from '../components/QuestionCard';
 import { ProgressBar } from '../components/Feedback';
@@ -17,7 +18,7 @@ export function CheckInPage() {
   const { save: saveCheckIn } = useCheckIns();
   const { saveSet } = useTodaysMissions(todayISO());
   const { upsert } = useHistory();
-  const { streak, set: setStreak } = useStreak();
+  const { countCheckIn } = useStreak();
 
   const sequence = useMemo(() => buildQuestionSequence(answers), [answers]);
   const currentIndex = sequence.findIndex((q) => !answers[q.id]);
@@ -42,18 +43,13 @@ export function CheckInPage() {
     saveCheckIn(result);
     saveSet({ date: result.date, missions: result.missions });
     upsert(toDaySummary(result));
-
-    // streak logic: increment if last check-in was a different day, else keep
-    const lastCheckInDate = storage.getCheckIns()[1]?.date; // [0] is the one we just saved
-    if (!lastCheckInDate || lastCheckInDate !== todayISO()) {
-      setStreak(streak + 1);
-    }
-    import('../engine/insights').then(({ evaluateAchievements }) => {
-      storage.saveAchievements(evaluateAchievements(storage.getHistory()));
-    });
+    countCheckIn(result.date);
+    storage.saveAchievements(
+      evaluateAchievements(storage.getHistory(), storage.getAchievements()),
+    );
 
     navigate('/processing');
-  }, [answers, saveCheckIn, saveSet, upsert, streak, setStreak, navigate]);
+  }, [answers, saveCheckIn, saveSet, upsert, countCheckIn, navigate]);
 
   const handleContinue = useCallback(() => {
     if (!question) {

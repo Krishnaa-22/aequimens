@@ -1,9 +1,11 @@
 import type { DaySummary, Preferences } from '../types';
+import { localDateISO } from '../utils/format';
 
 /**
  * Seed mock history so charts, progress, and insights have meaningful content
- * before the user has completed many check-ins. This data is clearly
- * supplemental — real check-ins replace/augment it.
+ * during local development/demo exploration. This is NEVER used for real
+ * users — it is only invoked when DEMO_MODE_ENABLED (see ../config.ts) is
+ * true, which requires both a dev build and an explicit opt-in env flag.
  */
 export function buildMockHistory(): DaySummary[] {
   const days: DaySummary[] = [];
@@ -24,7 +26,7 @@ export function buildMockHistory(): DaySummary[] {
     const row = seed[6 - i];
     const overall = Math.round(row.m * 0.24 + row.e * 0.22 + row.sl * 0.22 + (100 - row.s) * 0.2 + row.mo * 0.12);
     days.push({
-      date: d.toISOString().slice(0, 10),
+      date: localDateISO(d),
       overall,
       mood: row.m,
       energy: row.e,

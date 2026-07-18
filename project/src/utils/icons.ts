@@ -15,7 +15,7 @@ import {
   Bell, Settings, Home as HomeIcon, LayoutDashboard, ListChecks, TrendingUp, Lightbulb,
   Share2, Download, Copy, Heart, Scale, Award, Trophy, Calendar, ChevronRight,
   ChevronLeft, ChevronDown, RefreshCw, Pencil, Trash2, Lock, Info, AlertTriangle,
-  ArrowRight, ArrowLeft, Plus, XCircle, CheckCircle, Pause, Play,
+  ArrowRight, ArrowLeft, Plus, XCircle, CheckCircle, Pause, Play, WifiOff,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -38,7 +38,7 @@ const MAP: Record<string, LucideIcon> = {
   Bell, Settings, LayoutDashboard, ListChecks, TrendingUp, Lightbulb,
   Share2, Download, Copy, Heart, Scale, Award, Trophy, Calendar,
   ChevronRight, ChevronLeft, ChevronDown, RefreshCw, Pencil, Trash2, Lock, Info,
-  AlertTriangle, ArrowRight, ArrowLeft, Plus, XCircle, CheckCircle, Pause, Play,
+  AlertTriangle, ArrowRight, ArrowLeft, Plus, XCircle, CheckCircle, Pause, Play, WifiOff,
   HomeIcon,
 };
 

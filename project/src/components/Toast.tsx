@@ -1,32 +1,21 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { Icon } from './Icon';
+import { ToastContext, type ToastTone } from '../hooks/useToast';
 
-interface Toast {
+interface ToastMessage {
   id: number;
   message: string;
-  tone: 'default' | 'success' | 'info';
-}
-
-interface ToastContextValue {
-  show: (message: string, tone?: Toast['tone']) => void;
-}
-
-const ToastContext = createContext<ToastContextValue | null>(null);
-
-export function useToast() {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error('useToast must be used within ToastProvider');
-  return ctx;
+  tone: ToastTone;
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const show = useCallback((message: string, tone: Toast['tone'] = 'default') => {
+  const show = useCallback((message: string, tone: ToastTone = 'default') => {
     const id = Date.now() + Math.random();
-    setToasts((t) => [...t, { id, message, tone }]);
+    setToasts((current) => [...current, { id, message, tone }]);
     window.setTimeout(() => {
-      setToasts((t) => t.filter((x) => x.id !== id));
+      setToasts((current) => current.filter((toast) => toast.id !== id));
     }, 3200);
   }, []);
 
@@ -34,28 +23,28 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ show }}>
       {children}
       <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex flex-col items-center gap-2 px-4 md:bottom-8">
-        {toasts.map((t) => (
+        {toasts.map((toast) => (
           <div
-            key={t.id}
+            key={toast.id}
             role="status"
             className="pointer-events-auto animate-slideUp rounded-2xl border border-silver bg-white px-4 py-3 shadow-soft-lg"
           >
             <div className="flex items-center gap-2.5 text-sm font-medium text-ink">
               <span
                 className={
-                  t.tone === 'success'
+                  toast.tone === 'success'
                     ? 'text-olive-primary'
-                    : t.tone === 'info'
+                    : toast.tone === 'info'
                       ? 'text-olive-deep'
                       : 'text-ink-soft'
                 }
               >
                 <Icon
-                  name={t.tone === 'success' ? 'CheckCircle' : t.tone === 'info' ? 'Info' : 'Bell'}
+                  name={toast.tone === 'success' ? 'CheckCircle' : toast.tone === 'info' ? 'Info' : 'Bell'}
                   size={18}
                 />
               </span>
-              {t.message}
+              {toast.message}
             </div>
           </div>
         ))}

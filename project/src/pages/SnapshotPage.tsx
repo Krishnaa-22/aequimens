@@ -13,8 +13,10 @@ import { todayISO } from '../utils/format';
 
 export function SnapshotPage() {
   const navigate = useNavigate();
-  const { latest } = useCheckIns();
-  const { set, update, replace } = useTodaysMissions(todayISO());
+  const { checkIns } = useCheckIns();
+  const today = todayISO();
+  const { set, update, replace } = useTodaysMissions(today);
+  const latest = checkIns.find((checkIn) => checkIn.date === today) ?? null;
   const [showWhy, setShowWhy] = useState(false);
 
   if (!latest) {

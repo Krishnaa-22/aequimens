@@ -10,8 +10,9 @@ export function MissionsPage() {
   const navigate = useNavigate();
   const today = todayISO();
   const { set, update, replace } = useTodaysMissions(today);
-  const { latest } = useCheckIns();
+  const { checkIns } = useCheckIns();
   const { streak } = useStreak();
+  const todayCheckIn = checkIns.find((checkIn) => checkIn.date === today) ?? null;
 
   const missions = set?.missions ?? [];
   const completed = missions.filter((m) => m.completed).length;
@@ -95,7 +96,7 @@ export function MissionsPage() {
                 onToggle={() => update(m.id, { completed: !m.completed })}
                 onReplace={(rep) => replace(m.id, rep)}
                 onEdit={(name) => update(m.id, { name })}
-                contributors={latest?.contributors ?? []}
+                contributors={todayCheckIn?.contributors ?? []}
               />
             ))}
           </section>
@@ -104,7 +105,7 @@ export function MissionsPage() {
             <p className="text-sm text-ink-soft">Need a different set of steps?</p>
             <button
               onClick={() => {
-                const fresh = replacementMission(missions, latest?.contributors ?? []);
+                const fresh = replacementMission(missions, todayCheckIn?.contributors ?? []);
                 if (missions[0]) replace(missions[0].id, fresh);
               }}
               className="inline-flex items-center gap-1.5 text-sm font-medium text-olive-primary hover:text-olive-deep"

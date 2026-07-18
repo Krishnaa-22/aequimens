@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Aequimens app icon</title>
+  <defs>
+    <linearGradient id="olive" x1="70" y1="35" x2="445" y2="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A7B77D"/>
+      <stop offset="0.48" stop-color="#667A3E"/>
+      <stop offset="1" stop-color="#313A20"/>
+    </linearGradient>
+    <linearGradient id="silver" x1="125" y1="110" x2="385" y2="410" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F4F5F4"/>
+      <stop offset="0.58" stop-color="#C5C8C6"/>
+      <stop offset="1" stop-color="#888E8B"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="256" y1="0" x2="256" y2="265" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#202818" flood-opacity="0.32"/>
+    </filter>
+  </defs>
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#olive)" filter="url(#shadow)"/>
+  <rect x="24" y="24" width="464" height="235" rx="112" fill="url(#shine)"/>
+  <path d="M158 382 L232 153 Q244 117 270 117 L270 382" fill="none" stroke="url(#silver)" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M354 382 L270 153" fill="none" stroke="url(#silver)" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M192 306 Q256 287 320 306" fill="none" stroke="url(#silver)" stroke-width="29" stroke-linecap="round"/>
+  <circle cx="256" cy="183" r="18" fill="url(#silver)"/>
+</svg>

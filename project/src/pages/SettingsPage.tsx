@@ -8,6 +8,8 @@ import { storage } from '../data/localStorage';
 import type { NotificationSettings } from '../types';
 import { SAMPLE_NOTIFICATIONS } from '../data/mockData';
 import { Wordmark } from '../components/LogoMark';
+import { todayISO } from '../utils/format';
+import { usePWA } from '../pwa/usePWA';
 
 const NOTIF_FIELDS: { key: keyof NotificationSettings; label: string; example: string }[] = [
   { key: 'morningCheckIn', label: 'Morning check-in', example: SAMPLE_NOTIFICATIONS.morningCheckIn[0] },
@@ -31,6 +33,7 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const { prefs, save } = usePreferences();
   const { show } = useToast();
+  const { canInstall, install } = usePWA();
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -40,30 +43,39 @@ export function SettingsPage() {
     save({ ...prefs, notifications: { ...prefs.notifications, [key]: value } });
   };
 
+  const installAequimens = async () => {
+    const outcome = await install();
+    if (outcome === 'dismissed') {
+      show('Installation cancelled. You can install it later from Settings.', 'info');
+    } else if (outcome === 'unavailable') {
+      show('Installation is not available in this browser right now.', 'info');
+    }
+  };
+
   const exportData = () => {
     const data = storage.exportAll();
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `aequimens-data-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `aequimens-data-${todayISO()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     show('Your data was exported', 'success');
   };
 
   const resetProgress = () => {
-    storage.clearAll();
+    storage.clearProgress();
     setConfirmReset(false);
     show('Progress reset', 'success');
-    setTimeout(() => navigate('/welcome'), 600);
+    navigate('/welcome', { replace: true });
   };
 
   const deleteAll = () => {
     storage.clearAll();
     setConfirmDelete(false);
     show('All local data deleted', 'success');
-    setTimeout(() => navigate('/welcome'), 600);
+    navigate('/welcome', { replace: true });
   };
 
   return (
@@ -72,6 +84,23 @@ export function SettingsPage() {
         <p className="text-xs font-semibold uppercase tracking-wider text-olive-primary">Settings</p>
         <h1 className="mt-1 text-2xl font-bold text-ink md:text-3xl">Settings & privacy</h1>
       </header>
+
+      {canInstall && (
+        <Section title="Install Aequimens" icon="Download">
+          <Row
+            label="Add Aequimens to this device"
+            description="Open it from your home screen and keep local features available offline."
+          >
+            <button
+              type="button"
+              onClick={() => void installAequimens()}
+              className="btn-primary !px-4 !py-2.5 text-sm"
+            >
+              <Icon name="Download" size={16} /> Install app
+            </button>
+          </Row>
+        </Section>
+      )}
 
       {/* Appearance */}
       <Section title="Appearance" icon="Sun">

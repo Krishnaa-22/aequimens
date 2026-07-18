@@ -1,15 +1,13 @@
 import { NavLink } from 'react-router-dom';
 import { Icon } from './Icon';
 import { LogoMark, Wordmark } from './LogoMark';
-import type { LucideIcon } from 'lucide-react';
-
-export interface NavItem {
+interface NavItem {
   to: string;
   label: string;
   icon: string;
 }
 
-export const NAV_ITEMS: NavItem[] = [
+const NAV_ITEMS: NavItem[] = [
   { to: '/app', label: 'Home', icon: 'LayoutDashboard' },
   { to: '/app/check-in', label: 'Check-In', icon: 'Sparkles' },
   { to: '/app/missions', label: 'Missions', icon: 'ListChecks' },
@@ -101,5 +99,3 @@ export function MobileNavigation() {
   );
 }
 
-// satisfy import type use
-export type { LucideIcon };

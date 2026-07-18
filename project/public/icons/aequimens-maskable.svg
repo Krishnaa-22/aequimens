@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Aequimens maskable app icon</title>
+  <defs>
+    <linearGradient id="olive" x1="40" y1="20" x2="470" y2="500" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A7B77D"/>
+      <stop offset="0.48" stop-color="#667A3E"/>
+      <stop offset="1" stop-color="#313A20"/>
+    </linearGradient>
+    <linearGradient id="silver" x1="160" y1="140" x2="355" y2="365" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F4F5F4"/>
+      <stop offset="0.58" stop-color="#C5C8C6"/>
+      <stop offset="1" stop-color="#888E8B"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(256 215) rotate(90) scale(250)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E9EEDC" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#E9EEDC" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#olive)"/>
+  <circle cx="256" cy="256" r="244" fill="url(#glow)"/>
+  <path d="M178 358 L237 176 Q247 146 268 146 L268 358" fill="none" stroke="url(#silver)" stroke-width="31" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M334 358 L268 176" fill="none" stroke="url(#silver)" stroke-width="31" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M205 297 Q256 282 307 297" fill="none" stroke="url(#silver)" stroke-width="24" stroke-linecap="round"/>
+  <circle cx="256" cy="199" r="14" fill="url(#silver)"/>
+</svg>

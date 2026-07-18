@@ -9,6 +9,7 @@ import type {
 } from '../types';
 import { QUESTION_BY_ID, FOLLOW_UP_QUESTIONS } from './questions';
 import { generateMissions } from './recommendations';
+import { todayISO } from '../utils/format';
 
 /**
  * Transparent wellness scoring.
@@ -329,7 +330,7 @@ export function runCheckIn(answers: Answers): CheckInResult {
   const missions = generateMissions(answers, contributors);
 
   return {
-    date: new Date().toISOString().slice(0, 10),
+    date: todayISO(),
     overall,
     domainScores,
     contributors,

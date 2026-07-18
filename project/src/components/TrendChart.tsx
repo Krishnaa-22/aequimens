@@ -40,10 +40,14 @@ export function TrendChart({
   unit,
   invert,
 }: TrendChartProps) {
-  const chartData = data.map((d) => ({
-    date: formatShortDate(d.date),
-    value: d[dataKey] as number,
-  }));
+  const chartData = data
+    .map((d) => ({
+      date: formatShortDate(d.date),
+      value: d[dataKey],
+    }))
+    .filter((point): point is { date: string; value: number } =>
+      typeof point.value === 'number' && Number.isFinite(point.value),
+    );
 
   const gradientId = `grad-${label.replace(/\s+/g, '')}`;
 

@@ -13,11 +13,13 @@ import { InsightsPage } from './pages/InsightsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { BadDayPage } from './pages/BadDayPage';
 import { DisclaimerPage } from './pages/DisclaimerPage';
+import { PWAProvider } from './pwa/PWAProvider';
 
 export default function App() {
   return (
     <ToastProvider>
-      <BrowserRouter>
+      <PWAProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/" element={<SplashPage />} />
           <Route path="/welcome" element={<WelcomePage />} />
@@ -37,7 +39,8 @@ export default function App() {
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
+        </BrowserRouter>
+      </PWAProvider>
     </ToastProvider>
   );
 }

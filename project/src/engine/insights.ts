@@ -1,124 +1,184 @@
 import type { DaySummary, WeeklyReport, TriggerPattern, Achievement } from '../types';
+import { MIN_DAYS_FOR_PATTERNS, MIN_DAYS_FOR_WEEKLY_REPORT } from '../config';
+import { todayISO } from '../utils/format';
 
 /**
- * Pattern detection over recent history.
- * Correlations are presented as early sample insights until enough data exists.
+ * Pattern detection over real stored history.
+ * No sample or zero-occurrence patterns are returned before sufficient data.
  */
-
 export function detectTriggers(history: DaySummary[]): TriggerPattern[] {
-  if (history.length < 3) {
-    return [
-      { id: 'sleep_low', label: 'Sleep below six hours', type: 'negative', occurrences: 0, sample: true },
-      { id: 'screen_bed', label: 'High screen use before bed', type: 'negative', occurrences: 0, sample: true },
-      { id: 'no_outdoor', label: 'No outdoor activity', type: 'negative', occurrences: 0, sample: true },
-      { id: 'high_stress_days', label: 'Multiple high-stress days', type: 'negative', occurrences: 0, sample: true },
-      { id: 'walking_outdoor', label: 'Walking outdoors', type: 'positive', occurrences: 0, sample: true },
-      { id: 'regular_sleep', label: 'Regular sleep', type: 'positive', occurrences: 0, sample: true },
-      { id: 'social_interaction', label: 'Social interaction', type: 'positive', occurrences: 0, sample: true },
-      { id: 'hydration_goals', label: 'Completing hydration goals', type: 'positive', occurrences: 0, sample: true },
-    ];
-  }
+  if (history.length < MIN_DAYS_FOR_PATTERNS) return [];
 
   const patterns: TriggerPattern[] = [];
-  const sample = history.length < 7;
+  const add = (
+    id: string,
+    label: string,
+    type: TriggerPattern['type'],
+    occurrences: number,
+  ) => {
+    if (occurrences > 0) {
+      patterns.push({ id, label, type, occurrences, sample: false });
+    }
+  };
 
-  const lowSleep = history.filter((d) => (d.sleepHours ?? 99) < 6).length;
-  patterns.push({ id: 'sleep_low', label: 'Sleep below six hours', type: 'negative', occurrences: lowSleep, sample });
-
-  const highScreen = history.filter((d) => (d.screenMinutes ?? 0) >= 40).length;
-  patterns.push({ id: 'screen_bed', label: 'High screen use before bed', type: 'negative', occurrences: highScreen, sample });
-
-  const noOutdoor = history.filter((d) => (d.outdoorMinutes ?? 0) < 10).length;
-  patterns.push({ id: 'no_outdoor', label: 'No outdoor activity', type: 'negative', occurrences: noOutdoor, sample });
-
-  const highStressDays = history.filter((d) => d.stress >= 70).length;
-  patterns.push({ id: 'high_stress_days', label: 'Multiple high-stress days', type: 'negative', occurrences: highStressDays, sample });
-
-  const outdoorWalks = history.filter((d) => (d.outdoorMinutes ?? 0) >= 15).length;
-  patterns.push({ id: 'walking_outdoor', label: 'Walking outdoors', type: 'positive', occurrences: outdoorWalks, sample });
-
-  const regularSleep = history.filter((d) => (d.sleepHours ?? 0) >= 7 && (d.sleepHours ?? 0) <= 9).length;
-  patterns.push({ id: 'regular_sleep', label: 'Regular sleep', type: 'positive', occurrences: regularSleep, sample });
-
-  const socialDays = history.filter((d) => d.mood >= 60).length;
-  patterns.push({ id: 'social_interaction', label: 'Social interaction', type: 'positive', occurrences: socialDays, sample });
-
-  const hydrationDays = history.filter((d) => (d.waterGlasses ?? 0) >= 5).length;
-  patterns.push({ id: 'hydration_goals', label: 'Completing hydration goals', type: 'positive', occurrences: hydrationDays, sample });
+  add(
+    'sleep_low',
+    'Sleep below six hours',
+    'negative',
+    history.filter((day) => day.sleepHours !== undefined && day.sleepHours < 6).length,
+  );
+  add(
+    'screen_bed',
+    'High screen use before bed',
+    'negative',
+    history.filter((day) => day.screenMinutes !== undefined && day.screenMinutes >= 40).length,
+  );
+  add(
+    'no_outdoor',
+    'Very limited outdoor activity',
+    'negative',
+    history.filter((day) => day.outdoorMinutes !== undefined && day.outdoorMinutes < 10).length,
+  );
+  add(
+    'high_stress_days',
+    'Higher-stress days',
+    'negative',
+    history.filter((day) => day.stress >= 70).length,
+  );
+  add(
+    'walking_outdoor',
+    'Time spent outdoors',
+    'positive',
+    history.filter((day) => day.outdoorMinutes !== undefined && day.outdoorMinutes >= 15).length,
+  );
+  add(
+    'regular_sleep',
+    'Seven to nine hours of sleep',
+    'positive',
+    history.filter(
+      (day) =>
+        day.sleepHours !== undefined && day.sleepHours >= 7 && day.sleepHours <= 9,
+    ).length,
+  );
+  add(
+    'hydration_goals',
+    'Meeting hydration goals',
+    'positive',
+    history.filter((day) => day.waterGlasses !== undefined && day.waterGlasses >= 5).length,
+  );
 
   return patterns;
 }
 
+function average(values: number[]): number | null {
+  if (values.length === 0) return null;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function definedValues(
+  days: DaySummary[],
+  select: (day: DaySummary) => number | undefined,
+): number[] {
+  return days
+    .map(select)
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+}
+
 export function buildWeeklyReport(history: DaySummary[]): WeeklyReport | null {
-  if (history.length === 0) return null;
+  if (history.length < MIN_DAYS_FOR_WEEKLY_REPORT) return null;
 
   const sorted = [...history].sort((a, b) => a.date.localeCompare(b.date));
-  const last = sorted[sorted.length - 1];
-  const weekStart = sorted[Math.max(0, sorted.length - 7)].date;
-  const weekEnd = last.date;
-  const currentScore = last.overall;
-  const previous = sorted.length > 7 ? sorted[sorted.length - 8].overall : currentScore;
-  const changePercent = previous === 0 ? 0 : Math.round(((currentScore - previous) / previous) * 100);
+  const recent = sorted.slice(-7);
+  const first = recent[0];
+  const last = recent[recent.length - 1];
+  const previousScore = first.overall;
+  const changePercent =
+    previousScore === 0
+      ? 0
+      : Math.round(((last.overall - previousScore) / previousScore) * 100);
 
-  const last7 = sorted.slice(-7);
-
+  const splitAt = Math.ceil(recent.length / 2);
+  const firstHalf = recent.slice(0, splitAt);
+  const secondHalf = recent.slice(splitAt);
   const improvements: string[] = [];
-  if (last7.length >= 2) {
-    const firstHalf = last7.slice(0, Math.ceil(last7.length / 2));
-    const secondHalf = last7.slice(Math.ceil(last7.length / 2));
-    const avgSleep = (arr: DaySummary[]) =>
-      arr.reduce((s, d) => s + (d.sleepHours ?? 0), 0) / (arr.length || 1);
-    const sleepDelta = avgSleep(secondHalf) - avgSleep(firstHalf);
-    if (sleepDelta > 0.3) {
-      improvements.push(`Average sleep increased by ${sleepDelta.toFixed(1)} hours`);
-    }
 
-    const avgScreen = (arr: DaySummary[]) =>
-      arr.reduce((s, d) => s + (d.screenMinutes ?? 0), 0) / (arr.length || 1);
-    const screenDelta = avgScreen(firstHalf) - avgScreen(secondHalf);
-    if (screenDelta > 5) {
-      improvements.push(`Screen time decreased by ${Math.round((screenDelta / (avgScreen(firstHalf) || 1)) * 100)}%`);
+  const firstSleepValues = definedValues(firstHalf, (day) => day.sleepHours);
+  const secondSleepValues = definedValues(secondHalf, (day) => day.sleepHours);
+  if (firstSleepValues.length >= 2 && secondSleepValues.length >= 2) {
+    const firstSleep = average(firstSleepValues);
+    const secondSleep = average(secondSleepValues);
+    if (firstSleep !== null && secondSleep !== null && secondSleep - firstSleep > 0.3) {
+      improvements.push(`Average sleep increased by ${(secondSleep - firstSleep).toFixed(1)} hours`);
     }
+  }
 
-    const outdoorDays = last7.filter((d) => (d.outdoorMinutes ?? 0) >= 15).length;
-    if (outdoorDays >= 2) {
-      improvements.push(`${outdoorDays} outdoor ${outdoorDays === 1 ? 'mission' : 'missions'} completed`);
+  const firstScreenValues = definedValues(firstHalf, (day) => day.screenMinutes);
+  const secondScreenValues = definedValues(secondHalf, (day) => day.screenMinutes);
+  if (firstScreenValues.length >= 2 && secondScreenValues.length >= 2) {
+    const firstScreen = average(firstScreenValues);
+    const secondScreen = average(secondScreenValues);
+    if (
+      firstScreen !== null &&
+      secondScreen !== null &&
+      firstScreen > 0 &&
+      firstScreen - secondScreen > 5
+    ) {
+      improvements.push(
+        `Screen time decreased by ${Math.round(((firstScreen - secondScreen) / firstScreen) * 100)}%`,
+      );
     }
+  }
 
-    const avgStress = (arr: DaySummary[]) =>
-      arr.reduce((s, d) => s + d.stress, 0) / (arr.length || 1);
-    const stressDelta = avgStress(firstHalf) - avgStress(secondHalf);
-    if (stressDelta > 5) {
-      improvements.push(`Stress reduced from ${Math.round(avgStress(firstHalf) / 10)}/10 to ${Math.round(avgStress(secondHalf) / 10)}/10`);
-    }
+  const outdoorDays = recent.filter(
+    (day) => day.outdoorMinutes !== undefined && day.outdoorMinutes >= 15,
+  ).length;
+  if (outdoorDays >= 2) {
+    improvements.push(`${outdoorDays} outdoor days recorded`);
+  }
+
+  const firstStress = average(firstHalf.map((day) => day.stress));
+  const secondStress = average(secondHalf.map((day) => day.stress));
+  if (
+    firstStress !== null &&
+    secondStress !== null &&
+    firstStress - secondStress > 5
+  ) {
+    improvements.push(
+      `Stress shifted from ${Math.round(firstStress / 10)}/10 to ${Math.round(secondStress / 10)}/10`,
+    );
   }
 
   if (improvements.length === 0) {
-    improvements.push('You completed check-ins consistently this week');
+    improvements.push(`You completed ${recent.length} real check-ins in this reflection period`);
   }
 
-  // Main remaining challenge
   let challenge = 'Keep gathering data to surface a main challenge.';
-  const lowDomains: { name: string; value: number }[] = [];
-  if (last7.some((d) => (d.sleepHours ?? 99) < 6)) {
-    lowDomains.push({ name: 'sleep schedule', value: last7.filter((d) => (d.sleepHours ?? 99) < 6).length });
-  }
-  if (last7.some((d) => d.stress >= 65)) {
-    lowDomains.push({ name: 'stress', value: last7.filter((d) => d.stress >= 65).length });
-  }
-  if (last7.some((d) => (d.activeMinutes ?? 99) < 20)) {
-    lowDomains.push({ name: 'physical activity', value: last7.filter((d) => (d.activeMinutes ?? 99) < 20).length });
-  }
-  lowDomains.sort((a, b) => b.value - a.value);
-  if (lowDomains[0]) {
-    challenge = `Your ${lowDomains[0].name} remains inconsistent this week.`;
+  const challenges: { name: string; occurrences: number }[] = [];
+
+  const shortSleepDays = recent.filter(
+    (day) => day.sleepHours !== undefined && day.sleepHours < 6,
+  ).length;
+  if (shortSleepDays > 0) {
+    challenges.push({ name: 'sleep schedule', occurrences: shortSleepDays });
   }
 
-  // Top positive factor
-  const topFactor =
-    improvements[0] ?? 'Consistent daily check-ins';
+  const higherStressDays = recent.filter((day) => day.stress >= 65).length;
+  if (higherStressDays > 0) {
+    challenges.push({ name: 'stress', occurrences: higherStressDays });
+  }
 
-  // Recommendation
+  const lowActivityDays = recent.filter(
+    (day) => day.activeMinutes !== undefined && day.activeMinutes < 20,
+  ).length;
+  if (lowActivityDays > 0) {
+    challenges.push({ name: 'physical activity', occurrences: lowActivityDays });
+  }
+
+  challenges.sort((a, b) => b.occurrences - a.occurrences);
+  if (challenges[0]) {
+    challenge = `Your ${challenges[0].name} appears to be the most repeated area worth monitoring.`;
+  }
+
   let recommendation = 'Continue your current rhythm and check in again tomorrow.';
   if (challenge.includes('sleep')) {
     recommendation = 'Try a gentle wind-down 30 minutes before bed for the next few nights.';
@@ -129,15 +189,15 @@ export function buildWeeklyReport(history: DaySummary[]): WeeklyReport | null {
   }
 
   return {
-    weekStart,
-    weekEnd,
-    currentScore,
-    previousScore: previous,
+    weekStart: first.date,
+    weekEnd: last.date,
+    currentScore: last.overall,
+    previousScore,
     changePercent,
     improvements,
     challenge,
     recommendation,
-    topFactor,
+    topFactor: improvements[0],
   };
 }
 
@@ -145,43 +205,53 @@ const ACHIEVEMENT_DEFS: Omit<Achievement, 'earned' | 'earnedDate' | 'progress'>[
   { id: 'sleep_consistency_7', name: 'Seven-Day Sleep Consistency', description: '7+ hours of sleep for seven days', icon: 'MoonStar' },
   { id: 'hydration_week', name: 'Hydration Week', description: 'Met hydration goals for seven days', icon: 'GlassWater' },
   { id: 'active_week', name: 'Active Week', description: 'Moved your body on seven days', icon: 'Dumbbell' },
-  { id: 'screen_reduction', name: 'Screen-Time Reduction', description: 'Reduced pre-sleep screen use over a week', icon: 'MoonOff' },
+  { id: 'screen_reduction', name: 'Screen-Time Reduction', description: 'Kept pre-sleep screen use low over a week', icon: 'MoonOff' },
   { id: 'outdoor_streak', name: 'Outdoor Streak', description: 'Spent time outdoors on five days', icon: 'TreePine' },
-  { id: 'mission_consistency', name: 'Mission Consistency', description: 'Completed missions on seven days', icon: 'CheckCircle' },
+  { id: 'mission_consistency', name: 'Mission Consistency', description: 'Completed all missions on seven days', icon: 'CheckCircle' },
   { id: 'balanced_week', name: 'Balanced Week', description: 'Maintained a wellness score of 70+ for a week', icon: 'Scale' },
 ];
 
-export function evaluateAchievements(history: DaySummary[]): Achievement[] {
-  const last7 = history.slice(-7);
-  const last5 = history.slice(-5);
+export function evaluateAchievements(
+  history: DaySummary[],
+  existing: Achievement[] = [],
+): Achievement[] {
+  if (history.length === 0) return [];
 
-  const has = (days: DaySummary[], fn: (d: DaySummary) => boolean) => days.filter(fn);
+  const sorted = [...history].sort((a, b) => a.date.localeCompare(b.date));
+  const last7 = sorted.slice(-7);
+  const last5 = sorted.slice(-5);
+  const count = (days: DaySummary[], matches: (day: DaySummary) => boolean) =>
+    days.filter(matches).length;
 
-  const sleepOk = has(last7, (d) => (d.sleepHours ?? 0) >= 7).length >= 7;
-  const hydrationOk = has(last7, (d) => (d.waterGlasses ?? 0) >= 5).length >= 7;
-  const activeOk = has(last7, (d) => (d.activeMinutes ?? 0) >= 15).length >= 7;
-  const screenOk = has(last7, (d) => (d.screenMinutes ?? 999) <= 20).length >= 6;
-  const outdoorOk = has(last5, (d) => (d.outdoorMinutes ?? 0) >= 15).length >= 5;
-  const missionOk = has(last7, (d) => d.missionsCompleted > 0 && d.missionsCompleted === d.missionsTotal).length >= 7;
-  const balancedOk = has(last7, (d) => d.overall >= 70).length >= 7;
+  const sleepCount = count(last7, (day) => day.sleepHours !== undefined && day.sleepHours >= 7);
+  const hydrationCount = count(last7, (day) => day.waterGlasses !== undefined && day.waterGlasses >= 5);
+  const activeCount = count(last7, (day) => day.activeMinutes !== undefined && day.activeMinutes >= 15);
+  const screenCount = count(last7, (day) => day.screenMinutes !== undefined && day.screenMinutes <= 20);
+  const outdoorCount = count(last5, (day) => day.outdoorMinutes !== undefined && day.outdoorMinutes >= 15);
+  const missionCount = count(
+    last7,
+    (day) => day.missionsTotal > 0 && day.missionsCompleted === day.missionsTotal,
+  );
+  const balancedCount = count(last7, (day) => day.overall >= 70);
 
   const checks: Record<string, { earned: boolean; progress: number }> = {
-    sleep_consistency_7: { earned: sleepOk, progress: Math.min(100, Math.round((has(last7, (d) => (d.sleepHours ?? 0) >= 7).length / 7) * 100)) },
-    hydration_week: { earned: hydrationOk, progress: Math.min(100, Math.round((has(last7, (d) => (d.waterGlasses ?? 0) >= 5).length / 7) * 100)) },
-    active_week: { earned: activeOk, progress: Math.min(100, Math.round((has(last7, (d) => (d.activeMinutes ?? 0) >= 15).length / 7) * 100)) },
-    screen_reduction: { earned: screenOk, progress: Math.min(100, Math.round((has(last7, (d) => (d.screenMinutes ?? 999) <= 20).length / 7) * 100)) },
-    outdoor_streak: { earned: outdoorOk, progress: Math.min(100, Math.round((has(last5, (d) => (d.outdoorMinutes ?? 0) >= 15).length / 5) * 100)) },
-    mission_consistency: { earned: missionOk, progress: Math.min(100, Math.round((has(last7, (d) => d.missionsCompleted > 0 && d.missionsCompleted === d.missionsTotal).length / 7) * 100)) },
-    balanced_week: { earned: balancedOk, progress: Math.min(100, Math.round((has(last7, (d) => d.overall >= 70).length / 7) * 100)) },
+    sleep_consistency_7: { earned: sleepCount >= 7, progress: Math.min(100, Math.round((sleepCount / 7) * 100)) },
+    hydration_week: { earned: hydrationCount >= 7, progress: Math.min(100, Math.round((hydrationCount / 7) * 100)) },
+    active_week: { earned: activeCount >= 7, progress: Math.min(100, Math.round((activeCount / 7) * 100)) },
+    screen_reduction: { earned: screenCount >= 6, progress: Math.min(100, Math.round((screenCount / 6) * 100)) },
+    outdoor_streak: { earned: outdoorCount >= 5, progress: Math.min(100, Math.round((outdoorCount / 5) * 100)) },
+    mission_consistency: { earned: missionCount >= 7, progress: Math.min(100, Math.round((missionCount / 7) * 100)) },
+    balanced_week: { earned: balancedCount >= 7, progress: Math.min(100, Math.round((balancedCount / 7) * 100)) },
   };
 
-  return ACHIEVEMENT_DEFS.map((def) => {
-    const c = checks[def.id];
+  return ACHIEVEMENT_DEFS.map((definition) => {
+    const check = checks[definition.id];
+    const previous = existing.find((achievement) => achievement.id === definition.id);
     return {
-      ...def,
-      earned: c.earned,
-      progress: c.progress,
-      earnedDate: c.earned ? new Date().toISOString().slice(0, 10) : undefined,
+      ...definition,
+      earned: check.earned,
+      progress: check.progress,
+      earnedDate: check.earned ? previous?.earnedDate ?? todayISO() : undefined,
     };
   });
 }
