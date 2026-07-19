@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom';
-import { useTodaysMissions, useCheckIns, useStreak } from '../hooks';
+import { useTodaysMissions, useCheckIns, useStreak, useHabits } from '../hooks';
 import { MissionCard } from '../components/MissionCard';
 import { EmptyState } from '../components/Feedback';
 import { Icon } from '../components/Icon';
 import { todayISO } from '../utils/format';
-import { replacementMission } from '../engine/recommendations';
+import { replacementMission, gentlerAlternative, missionMissStreak } from '../engine/recommendations';
+import { storage } from '../data/localStorage';
+import type { WeekdayIndex } from '../types';
 
 export function MissionsPage() {
   const navigate = useNavigate();
@@ -12,12 +14,22 @@ export function MissionsPage() {
   const { set, update, replace } = useTodaysMissions(today);
   const { checkIns } = useCheckIns();
   const { streak } = useStreak();
+  const { habits, toggleLog, isCompleted } = useHabits();
   const todayCheckIn = checkIns.find((checkIn) => checkIn.date === today) ?? null;
+  const todayWeekday = new Date().getDay() as WeekdayIndex;
 
   const missions = set?.missions ?? [];
   const completed = missions.filter((m) => m.completed).length;
   const total = missions.length;
   const pct = total > 0 ? completed / total : 0;
+
+  const allSets = storage.getMissionSets();
+  const strugglingMissions = missions
+    .filter((m) => !m.completed)
+    .map((m) => ({ mission: m, missed: missionMissStreak(m.id.split('_')[0], allSets, today) }))
+    .filter((x) => x.missed >= 2);
+
+  const todaysHabits = habits.filter((h) => h.active && h.daysOfWeek.includes(todayWeekday));
 
   const message =
     total === 0
@@ -87,6 +99,31 @@ export function MissionsPage() {
             </div>
           </section>
 
+          {/* Adaptive difficulty: gently offer a smaller version of repeatedly-missed missions */}
+          {strugglingMissions.length > 0 && (
+            <section className="mb-6 space-y-2.5">
+              {strugglingMissions.map(({ mission }) => (
+                <div
+                  key={mission.id}
+                  className="flex flex-col gap-3 rounded-2xl border border-olive-soft/40 bg-olive-tint/40 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <Icon name="Feather" size={17} className="mt-0.5 shrink-0 text-olive-primary" />
+                    <p className="text-sm leading-relaxed text-olive-deep">
+                      "{mission.name}" has been tricky lately — want to try a smaller version instead?
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => replace(mission.id, gentlerAlternative(mission))}
+                    className="btn-secondary shrink-0 !px-3.5 !py-2 text-sm"
+                  >
+                    Try smaller step
+                  </button>
+                </div>
+              ))}
+            </section>
+          )}
+
           {/* Mission list */}
           <section className="space-y-2.5">
             {missions.map((m) => (
@@ -115,6 +152,56 @@ export function MissionsPage() {
           </div>
         </>
       )}
+
+      {/* Custom habits, shown alongside generated missions but visually distinct */}
+      <section className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-ink">Your custom habits</h2>
+          <button
+            onClick={() => navigate('/app/habits')}
+            className="text-xs font-medium text-olive-primary hover:text-olive-deep"
+          >
+            Manage
+          </button>
+        </div>
+        {todaysHabits.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-silver bg-silver-light/30 p-4 text-center text-xs leading-relaxed text-ink-soft">
+            No custom habits scheduled for today.{' '}
+            <button onClick={() => navigate('/app/habits')} className="font-medium text-olive-primary underline-offset-2 hover:underline">
+              Create one
+            </button>
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {todaysHabits.map((h) => (
+              <div
+                key={h.id}
+                className="flex items-center gap-3 rounded-2xl border-l-4 border-l-olive-soft bg-white p-3.5 shadow-soft"
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleLog(h.id, today, !isCompleted(h.id, today))}
+                  aria-label={isCompleted(h.id, today) ? 'Mark as not done' : 'Mark as done'}
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 transition-all ${
+                    isCompleted(h.id, today)
+                      ? 'border-olive-primary bg-olive-primary text-white'
+                      : 'border-silver text-transparent hover:border-olive-soft/70'
+                  }`}
+                >
+                  <Icon name="Check" size={16} />
+                </button>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium text-ink">{h.title}</p>
+                    <span className="chip !py-0.5 !px-2 border-olive-soft/40 bg-olive-tint/50 text-[10px] text-olive-deep">Custom</span>
+                  </div>
+                  <p className="text-xs text-ink-soft">{h.target}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <div className="mt-6">
         <button

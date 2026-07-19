@@ -13,6 +13,13 @@ import { InsightsPage } from './pages/InsightsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { BadDayPage } from './pages/BadDayPage';
 import { DisclaimerPage } from './pages/DisclaimerPage';
+import { HabitsPage } from './pages/HabitsPage';
+import { MorningCheckInPage } from './pages/MorningCheckInPage';
+import { EveningCheckInPage } from './pages/EveningCheckInPage';
+import { TimelinePage } from './pages/TimelinePage';
+import { ChallengesPage } from './pages/ChallengesPage';
+import { QuickResetPage } from './pages/QuickResetPage';
+import { MonthlyStoryPage } from './pages/MonthlyStoryPage';
 import { PWAProvider } from './pwa/PWAProvider';
 
 export default function App() {
@@ -36,6 +43,13 @@ export default function App() {
             <Route path="insights" element={<InsightsPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="bad-day" element={<BadDayPage />} />
+            <Route path="habits" element={<HabitsPage />} />
+            <Route path="morning-check-in" element={<MorningCheckInPage />} />
+            <Route path="evening-check-in" element={<EveningCheckInPage />} />
+            <Route path="timeline" element={<TimelinePage />} />
+            <Route path="challenges" element={<ChallengesPage />} />
+            <Route path="quick-reset" element={<QuickResetPage />} />
+            <Route path="monthly-story" element={<MonthlyStoryPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

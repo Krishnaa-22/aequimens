@@ -6,6 +6,12 @@ import type {
   Preferences,
   DaySummary,
   Achievement,
+  Habit,
+  HabitLog,
+  MorningCheckIn,
+  EveningCheckIn,
+  ContextMarker,
+  ChallengeParticipation,
 } from '../types';
 import { evaluateAchievements } from '../engine/insights';
 
@@ -18,6 +24,13 @@ export const STORAGE_KEYS = {
   history: 'aequimens.history', // DaySummary[] oldest -> newest
   achievements: 'aequimens.achievements',
   onboarded: 'aequimens.onboarded',
+  // --- Added in the wellness-system expansion ---
+  habits: 'aequimens.habits', // Habit[]
+  habitLogs: 'aequimens.habitLogs', // HabitLog[]
+  morningCheckIns: 'aequimens.morningCheckIns', // MorningCheckIn[]
+  eveningCheckIns: 'aequimens.eveningCheckIns', // EveningCheckIn[]
+  contextMarkers: 'aequimens.contextMarkers', // ContextMarker[]
+  challenges: 'aequimens.challenges', // ChallengeParticipation[]
 } as const;
 
 export const AEQUIMENS_STORAGE_EVENT = 'aequimens-storage-change';
@@ -209,6 +222,74 @@ export const storage = {
     write(STORAGE_KEYS.onboarded, value);
   },
 
+  // ---- Custom habits ----
+  getHabits(): Habit[] {
+    return read<Habit[]>(STORAGE_KEYS.habits, []);
+  },
+  saveHabit(habit: Habit): void {
+    const all = storage.getHabits().filter((h) => h.id !== habit.id);
+    all.push(habit);
+    write(STORAGE_KEYS.habits, all);
+  },
+  deleteHabit(habitId: string): void {
+    const all = storage.getHabits().filter((h) => h.id !== habitId);
+    write(STORAGE_KEYS.habits, all);
+    const logs = storage.getHabitLogs().filter((l) => l.habitId !== habitId);
+    write(STORAGE_KEYS.habitLogs, logs);
+  },
+
+  getHabitLogs(): HabitLog[] {
+    return read<HabitLog[]>(STORAGE_KEYS.habitLogs, []);
+  },
+  setHabitLog(habitId: string, date: string, completed: boolean): void {
+    const all = storage.getHabitLogs().filter((l) => !(l.habitId === habitId && l.date === date));
+    all.push({ habitId, date, completed, completedAt: completed ? new Date().toISOString() : undefined });
+    write(STORAGE_KEYS.habitLogs, all);
+  },
+
+  // ---- Morning / evening check-ins ----
+  getMorningCheckIns(): MorningCheckIn[] {
+    return read<MorningCheckIn[]>(STORAGE_KEYS.morningCheckIns, []);
+  },
+  saveMorningCheckIn(entry: MorningCheckIn): void {
+    const all = storage.getMorningCheckIns().filter((e) => e.date !== entry.date);
+    all.push(entry);
+    all.sort((a, b) => b.date.localeCompare(a.date));
+    write(STORAGE_KEYS.morningCheckIns, all);
+  },
+  getEveningCheckIns(): EveningCheckIn[] {
+    return read<EveningCheckIn[]>(STORAGE_KEYS.eveningCheckIns, []);
+  },
+  saveEveningCheckIn(entry: EveningCheckIn): void {
+    const all = storage.getEveningCheckIns().filter((e) => e.date !== entry.date);
+    all.push(entry);
+    all.sort((a, b) => b.date.localeCompare(a.date));
+    write(STORAGE_KEYS.eveningCheckIns, all);
+  },
+
+  // ---- Context markers ----
+  getContextMarkers(): ContextMarker[] {
+    return read<ContextMarker[]>(STORAGE_KEYS.contextMarkers, []);
+  },
+  saveContextMarker(marker: ContextMarker): void {
+    const all = storage.getContextMarkers().filter((m) => m.id !== marker.id);
+    all.push(marker);
+    write(STORAGE_KEYS.contextMarkers, all);
+  },
+  deleteContextMarker(id: string): void {
+    write(STORAGE_KEYS.contextMarkers, storage.getContextMarkers().filter((m) => m.id !== id));
+  },
+
+  // ---- Challenges ----
+  getChallenges(): ChallengeParticipation[] {
+    return read<ChallengeParticipation[]>(STORAGE_KEYS.challenges, []);
+  },
+  saveChallenge(challenge: ChallengeParticipation): void {
+    const all = storage.getChallenges().filter((c) => c.id !== challenge.id);
+    all.push(challenge);
+    write(STORAGE_KEYS.challenges, all);
+  },
+
   // ---- Danger zone ----
   clearProgress(): void {
     removeOwnedKeys(
@@ -219,6 +300,12 @@ export const storage = {
         STORAGE_KEYS.lastCountedDate,
         STORAGE_KEYS.history,
         STORAGE_KEYS.achievements,
+        STORAGE_KEYS.habits,
+        STORAGE_KEYS.habitLogs,
+        STORAGE_KEYS.morningCheckIns,
+        STORAGE_KEYS.eveningCheckIns,
+        STORAGE_KEYS.contextMarkers,
+        STORAGE_KEYS.challenges,
       ],
       'progress',
     );
@@ -227,12 +314,33 @@ export const storage = {
     removeOwnedKeys(Object.values(STORAGE_KEYS), 'all');
   },
 
-  // ---- Export ----
+  // ---- Export / Import ----
   exportAll(): string {
     const data: Record<string, unknown> = {};
     (Object.entries(STORAGE_KEYS) as [string, string][]).forEach(([name, key]) => {
       data[name] = read(key, null);
     });
-    return JSON.stringify(data, null, 2);
+    return JSON.stringify({ app: 'aequimens', exportedAt: new Date().toISOString(), data }, null, 2);
+  },
+  /**
+   * Imports a previously exported Aequimens backup. Only recognised
+   * aequimens.* keys are touched; all other localStorage data is untouched.
+   * Returns true on success, false if the payload could not be parsed.
+   */
+  importAll(json: string): boolean {
+    try {
+      const parsed = JSON.parse(json) as { app?: string; data?: Record<string, unknown> };
+      const data = parsed?.data ?? (parsed as Record<string, unknown>);
+      if (!data || typeof data !== 'object') return false;
+      (Object.entries(STORAGE_KEYS) as [string, string][]).forEach(([name, key]) => {
+        if (name in data && data[name] !== null && data[name] !== undefined) {
+          localStorage.setItem(key, JSON.stringify(data[name]));
+        }
+      });
+      notifyStorageChange('import');
+      return true;
+    } catch {
+      return false;
+    }
   },
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePreferences, useToast } from '../hooks';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
@@ -52,6 +52,8 @@ export function SettingsPage() {
     }
   };
 
+  const importInputRef = useRef<HTMLInputElement>(null);
+
   const exportData = () => {
     const data = storage.exportAll();
     const blob = new Blob([data], { type: 'application/json' });
@@ -62,6 +64,21 @@ export function SettingsPage() {
     a.click();
     URL.revokeObjectURL(url);
     show('Your data was exported', 'success');
+  };
+
+  const handleImportFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const ok = storage.importAll(text);
+      if (ok) {
+        show('Your data was imported', 'success');
+        navigate('/app', { replace: true });
+      } else {
+        show('That file could not be read. Was it exported from Aequimens?', 'info');
+      }
+    } catch {
+      show('That file could not be read. Was it exported from Aequimens?', 'info');
+    }
   };
 
   const resetProgress = () => {
@@ -150,6 +167,22 @@ export function SettingsPage() {
           <button onClick={exportData} className="btn-secondary !px-4 !py-2.5 text-sm">
             <Icon name="Download" size={16} /> Export
           </button>
+        </Row>
+        <Row label="Import local data" description="Restore a previously exported Aequimens backup file.">
+          <button onClick={() => importInputRef.current?.click()} className="btn-secondary !px-4 !py-2.5 text-sm">
+            <Icon name="RefreshCw" size={16} /> Import
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void handleImportFile(file);
+              e.target.value = '';
+            }}
+          />
         </Row>
         <Row label="Reset progress" description="Clears check-ins, missions, streaks, and history.">
           <button onClick={() => setConfirmReset(true)} className="btn-secondary !px-4 !py-2.5 text-sm">

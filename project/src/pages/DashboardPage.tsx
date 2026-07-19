@@ -63,6 +63,28 @@ export function DashboardPage() {
         </div>
       )}
 
+      <div className="mb-6 grid grid-cols-3 gap-2.5 sm:grid-cols-6">
+        {[
+          { to: '/app/morning-check-in', icon: 'Sunrise', label: 'Morning' },
+          { to: '/app/evening-check-in', icon: 'MoonStar', label: 'Evening' },
+          { to: '/app/habits', icon: 'ListChecks', label: 'Habits' },
+          { to: '/app/timeline', icon: 'Calendar', label: 'Timeline' },
+          { to: '/app/challenges', icon: 'Trophy', label: 'Challenges' },
+          { to: '/app/quick-reset', icon: 'Wind', label: 'Reset' },
+        ].map((item) => (
+          <button
+            key={item.to}
+            onClick={() => navigate(item.to)}
+            className="flex flex-col items-center gap-1.5 rounded-2xl border border-silver/70 bg-white p-3 text-center shadow-soft transition-all hover:-translate-y-0.5 hover:border-olive-soft/60 hover:shadow-soft-lg"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-olive-tint text-olive-primary">
+              <Icon name={item.icon} size={17} />
+            </span>
+            <span className="text-[11px] font-medium text-ink-soft">{item.label}</span>
+          </button>
+        ))}
+      </div>
+
       <div className="grid gap-5 lg:grid-cols-3">
         <section className="premium-card flex flex-col items-center p-6 lg:col-span-1">
           <h2 className="mb-1 self-start text-sm font-semibold text-ink">Current wellness</h2>

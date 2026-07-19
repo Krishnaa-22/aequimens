@@ -175,3 +175,152 @@ export interface TriggerPattern {
   occurrences: number;
   sample: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Custom habits
+// ---------------------------------------------------------------------------
+
+export type HabitDifficulty = 'easy' | 'medium' | 'hard';
+export type WeekdayIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0 = Sunday
+
+export interface Habit {
+  id: string;
+  title: string;
+  category?: Category | 'custom';
+  target: string; // free-text target description, e.g. "3 glasses" or "10 minutes"
+  reminderTime?: string; // "HH:MM", optional
+  daysOfWeek: WeekdayIndex[];
+  difficulty: HabitDifficulty;
+  active: boolean;
+  createdAt: string;
+  icon?: string;
+}
+
+export interface HabitLog {
+  habitId: string;
+  date: string; // YYYY-MM-DD
+  completed: boolean;
+  completedAt?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Morning / evening check-ins
+// ---------------------------------------------------------------------------
+
+export interface MorningCheckIn {
+  date: string;
+  sleepQuality: number; // 1-5
+  morningEnergy: number; // 1-5
+  focus: string;
+  completedAt: string;
+}
+
+export interface EveningCheckIn {
+  date: string;
+  mood: number; // 1-5
+  stress: number; // 1-5, higher = more stressed
+  whatHelped: string[]; // free-text tags/entries
+  whatWasHard: string[];
+  reflection?: string;
+  completedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Context markers
+// ---------------------------------------------------------------------------
+
+export type ContextMarkerType =
+  | 'exam'
+  | 'travel'
+  | 'family'
+  | 'deadline'
+  | 'social'
+  | 'custom';
+
+export interface ContextMarker {
+  id: string;
+  type: ContextMarkerType;
+  label: string;
+  startDate: string;
+  endDate?: string; // absent = ongoing/single day
+  note?: string;
+  createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Challenges
+// ---------------------------------------------------------------------------
+
+export type ChallengeTemplateId =
+  | 'sleep-reset-7'
+  | 'hydration-week'
+  | 'screen-time-reduction'
+  | 'outdoor-time';
+
+export interface ChallengeTemplate {
+  id: ChallengeTemplateId;
+  name: string;
+  description: string;
+  durationDays: number;
+  icon: string;
+  habit: Pick<Habit, 'title' | 'target' | 'category' | 'difficulty' | 'icon'>;
+}
+
+export interface ChallengeParticipation {
+  id: string;
+  templateId: ChallengeTemplateId;
+  habitId: string; // generated habit backing this challenge
+  startDate: string;
+  endDate: string;
+  completedDates: string[];
+  active: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Timeline (derived, not stored directly)
+// ---------------------------------------------------------------------------
+
+export type TimelineEntryType =
+  | 'check-in'
+  | 'morning'
+  | 'evening'
+  | 'habit'
+  | 'mission'
+  | 'context'
+  | 'achievement';
+
+export interface TimelineEntry {
+  id: string;
+  date: string;
+  type: TimelineEntryType;
+  title: string;
+  detail?: string;
+  icon: string;
+}
+
+// ---------------------------------------------------------------------------
+// Improved weekly report
+// ---------------------------------------------------------------------------
+
+export interface EnhancedWeeklyReport extends WeeklyReport {
+  strongestImprovement: string;
+  biggestChallenge: string;
+  helpfulHabits: string[];
+  consistency: number; // 0-100, share of days with any activity logged
+  nextWeekSuggestion: string;
+}
+
+// ---------------------------------------------------------------------------
+// Monthly wellness story
+// ---------------------------------------------------------------------------
+
+export interface MonthlyStory {
+  month: string; // YYYY-MM
+  hasEnoughData: boolean;
+  bestWeekLabel?: string;
+  topImprovement?: string;
+  strongestHabit?: string;
+  biggestChallenge?: string;
+  completionPercent?: number;
+  highlight?: string;
+}

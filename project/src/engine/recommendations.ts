@@ -1,4 +1,4 @@
-import type { Answers, Contributor, Mission, Category, MissionDifficulty } from '../types';
+import type { Answers, Contributor, Mission, MissionSet, Category, MissionDifficulty } from '../types';
 
 const MISSION_LIBRARY: Record<
   string,
@@ -172,6 +172,65 @@ export function generateMissions(_answers: Answers, contributors: Contributor[])
     completed: false,
     createdAt: new Date().toISOString(),
   }));
+}
+
+/**
+ * Counts how many of the most recent days (before today, newest-first
+ * ordering assumed in `sets`) included a mission sharing the same base id
+ * that was left uncompleted. Stops counting at the first day it doesn't
+ * appear or was completed.
+ */
+export function missionMissStreak(missionBaseId: string, sets: MissionSet[], today: string): number {
+  const priorSets = sets.filter((s) => s.date !== today).sort((a, b) => b.date.localeCompare(a.date));
+  let streak = 0;
+  for (const set of priorSets) {
+    const match = set.missions.find((m) => m.id.split('_')[0] === missionBaseId);
+    if (!match) break;
+    if (match.completed) break;
+    streak += 1;
+  }
+  return streak;
+}
+
+/**
+ * When a mission has been missed several days running, offer a smaller,
+ * friendlier version rather than repeating the same target. This never
+ * shames the user — it only reduces the ask.
+ */
+export function gentlerAlternative(mission: Mission): Mission {
+  const smallerNumber = (value: number, floor: number) => Math.max(floor, Math.round(value / 2));
+
+  let name = mission.name;
+  const minuteMatch = name.match(/(\d+)[\s-]*minute/i);
+  if (minuteMatch) {
+    const smaller = smallerNumber(Number(minuteMatch[1]), 5);
+    name = name.replace(minuteMatch[0], `${smaller}-minute`);
+  } else {
+    const litreMatch = name.match(/(\d+(?:\.\d+)?)\s*L\b/i);
+    if (litreMatch) {
+      const smaller = Math.max(1, Number(litreMatch[1]) - 1);
+      name = name.replace(litreMatch[0], `${smaller}L`);
+    } else {
+      const glassMatch = name.match(/(\d+)\s*(more\s+)?glass/i);
+      if (glassMatch) {
+        const smaller = smallerNumber(Number(glassMatch[1]), 1);
+        name = name.replace(glassMatch[1], String(smaller));
+      } else {
+        name = `A smaller version: ${mission.name.charAt(0).toLowerCase()}${mission.name.slice(1)}`;
+      }
+    }
+  }
+
+  return {
+    ...mission,
+    id: `${mission.id.split('_')[0]}_easier_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    name,
+    reason: 'A lighter version of the same idea — any amount still counts.',
+    difficulty: 'gentle',
+    estimatedMinutes: Math.max(2, Math.round(mission.estimatedMinutes / 2)),
+    completed: false,
+    createdAt: new Date().toISOString(),
+  };
 }
 
 /** A replacement mission for the "replace" action. */

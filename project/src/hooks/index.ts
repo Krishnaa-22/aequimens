@@ -3,11 +3,24 @@ import {
   AEQUIMENS_STORAGE_EVENT,
   storage,
 } from '../data/localStorage';
-import type { CheckInResult, MissionSet, Preferences, DaySummary, Achievement } from '../types';
+import type {
+  CheckInResult,
+  MissionSet,
+  Preferences,
+  DaySummary,
+  Achievement,
+  Habit,
+  HabitLog,
+  MorningCheckIn,
+  EveningCheckIn,
+  ContextMarker,
+  ChallengeParticipation,
+} from '../types';
 import { DEFAULT_PREFERENCES, buildMockHistory } from '../data/mockData';
 import { DEMO_MODE_ENABLED } from '../config';
 import { computeNextStreak, shouldCountTowardStreak } from '../utils/streak';
 import { evaluateAchievements } from '../engine/insights';
+import { localDateISO } from '../utils/format';
 
 export { useToast } from './useToast';
 
@@ -181,4 +194,166 @@ export function useAchievements() {
   }, []);
 
   return { achievements, refresh };
+}
+
+// ---------------------------------------------------------------------------
+// Custom habits
+// ---------------------------------------------------------------------------
+
+export function useHabits() {
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [logs, setLogs] = useState<HabitLog[]>([]);
+
+  const refresh = useCallback(() => {
+    setHabits(storage.getHabits());
+    setLogs(storage.getHabitLogs());
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    return subscribeToStorage(refresh);
+  }, [refresh]);
+
+  const save = useCallback(
+    (habit: Habit) => {
+      storage.saveHabit(habit);
+      refresh();
+    },
+    [refresh],
+  );
+
+  const remove = useCallback(
+    (habitId: string) => {
+      storage.deleteHabit(habitId);
+      refresh();
+    },
+    [refresh],
+  );
+
+  const toggleLog = useCallback(
+    (habitId: string, date: string, completed: boolean) => {
+      storage.setHabitLog(habitId, date, completed);
+      refresh();
+    },
+    [refresh],
+  );
+
+  const isCompleted = useCallback(
+    (habitId: string, date: string) =>
+      logs.some((l) => l.habitId === habitId && l.date === date && l.completed),
+    [logs],
+  );
+
+  /** Consecutive-day miss count for a habit, most-recent-first, ending today. */
+  const missedStreak = useCallback(
+    (habitId: string, today: string) => {
+      let count = 0;
+      const [y, m, d] = today.split('-').map(Number);
+      const cursor = new Date(y, (m ?? 1) - 1, d ?? 1);
+      for (let i = 0; i < 14; i += 1) {
+        const dateStr = localDateISO(cursor);
+        const log = logs.find((l) => l.habitId === habitId && l.date === dateStr);
+        if (log?.completed) break;
+        if (log && log.completed === false) count += 1;
+        else if (!log && dateStr !== today) count += 1; // no entry counts as a miss for past days
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      return count;
+    },
+    [logs],
+  );
+
+  return { habits, logs, save, remove, toggleLog, isCompleted, missedStreak, refresh };
+}
+
+// ---------------------------------------------------------------------------
+// Morning / evening check-ins
+// ---------------------------------------------------------------------------
+
+export function useMorningCheckIns() {
+  const [entries, setEntries] = useState<MorningCheckIn[]>([]);
+  const refresh = useCallback(() => setEntries(storage.getMorningCheckIns()), []);
+  useEffect(() => {
+    refresh();
+    return subscribeToStorage(refresh);
+  }, [refresh]);
+  const save = useCallback(
+    (entry: MorningCheckIn) => {
+      storage.saveMorningCheckIn(entry);
+      refresh();
+    },
+    [refresh],
+  );
+  return { entries, save, todayEntry: (date: string) => entries.find((e) => e.date === date) ?? null };
+}
+
+export function useEveningCheckIns() {
+  const [entries, setEntries] = useState<EveningCheckIn[]>([]);
+  const refresh = useCallback(() => setEntries(storage.getEveningCheckIns()), []);
+  useEffect(() => {
+    refresh();
+    return subscribeToStorage(refresh);
+  }, [refresh]);
+  const save = useCallback(
+    (entry: EveningCheckIn) => {
+      storage.saveEveningCheckIn(entry);
+      refresh();
+    },
+    [refresh],
+  );
+  return { entries, save, todayEntry: (date: string) => entries.find((e) => e.date === date) ?? null };
+}
+
+// ---------------------------------------------------------------------------
+// Context markers
+// ---------------------------------------------------------------------------
+
+export function useContextMarkers() {
+  const [markers, setMarkers] = useState<ContextMarker[]>([]);
+  const refresh = useCallback(() => setMarkers(storage.getContextMarkers()), []);
+  useEffect(() => {
+    refresh();
+    return subscribeToStorage(refresh);
+  }, [refresh]);
+  const save = useCallback(
+    (marker: ContextMarker) => {
+      storage.saveContextMarker(marker);
+      refresh();
+    },
+    [refresh],
+  );
+  const remove = useCallback(
+    (id: string) => {
+      storage.deleteContextMarker(id);
+      refresh();
+    },
+    [refresh],
+  );
+  const activeOn = useCallback(
+    (date: string) =>
+      markers.filter((m) => m.startDate <= date && (!m.endDate || m.endDate >= date)),
+    [markers],
+  );
+  return { markers, save, remove, activeOn };
+}
+
+// ---------------------------------------------------------------------------
+// Challenges
+// ---------------------------------------------------------------------------
+
+export function useChallenges() {
+  const [challenges, setChallenges] = useState<ChallengeParticipation[]>([]);
+  const refresh = useCallback(() => setChallenges(storage.getChallenges()), []);
+  useEffect(() => {
+    refresh();
+    return subscribeToStorage(refresh);
+  }, [refresh]);
+  const save = useCallback(
+    (challenge: ChallengeParticipation) => {
+      storage.saveChallenge(challenge);
+      refresh();
+    },
+    [refresh],
+  );
+  return { challenges, save };
 }

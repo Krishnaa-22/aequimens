@@ -55,20 +55,28 @@ export function ProgressPage() {
           <p className="text-xs font-semibold uppercase tracking-wider text-olive-primary">Progress</p>
           <h1 className="mt-1 text-2xl font-bold text-ink md:text-3xl">Your trends over time</h1>
         </div>
-        <div className="flex rounded-2xl border border-silver bg-white p-1">
-          {([7, 30, 90] as Range[]).map((option) => (
-            <button
-              key={option}
-              onClick={() => setRange(option)}
-              className={`rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${
-                range === option
-                  ? 'bg-olive-tint text-olive-deep shadow-[inset_0_0_0_1px_rgba(155,174,112,0.4)]'
-                  : 'text-ink-soft hover:text-ink'
-              }`}
-            >
-              {option === 7 ? '7 days' : option === 30 ? '30 days' : '3 months'}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/app/monthly-story')}
+            className="btn-secondary !px-3.5 !py-2 text-sm"
+          >
+            <Icon name="Calendar" size={15} /> Monthly story
+          </button>
+          <div className="flex rounded-2xl border border-silver bg-white p-1">
+            {([7, 30, 90] as Range[]).map((option) => (
+              <button
+                key={option}
+                onClick={() => setRange(option)}
+                className={`rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${
+                  range === option
+                    ? 'bg-olive-tint text-olive-deep shadow-[inset_0_0_0_1px_rgba(155,174,112,0.4)]'
+                    : 'text-ink-soft hover:text-ink'
+                }`}
+              >
+                {option === 7 ? '7 days' : option === 30 ? '30 days' : '3 months'}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
