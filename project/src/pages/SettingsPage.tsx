@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePreferences, useToast } from '../hooks';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
@@ -8,7 +8,6 @@ import { storage } from '../data/localStorage';
 import type { NotificationSettings } from '../types';
 import { SAMPLE_NOTIFICATIONS } from '../data/mockData';
 import { Wordmark } from '../components/LogoMark';
-import { todayISO } from '../utils/format';
 import { usePWA } from '../pwa/usePWA';
 
 const NOTIF_FIELDS: { key: keyof NotificationSettings; label: string; example: string }[] = [
@@ -49,35 +48,6 @@ export function SettingsPage() {
       show('Installation cancelled. You can install it later from Settings.', 'info');
     } else if (outcome === 'unavailable') {
       show('Installation is not available in this browser right now.', 'info');
-    }
-  };
-
-  const importInputRef = useRef<HTMLInputElement>(null);
-
-  const exportData = () => {
-    const data = storage.exportAll();
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `aequimens-data-${todayISO()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    show('Your data was exported', 'success');
-  };
-
-  const handleImportFile = async (file: File) => {
-    try {
-      const text = await file.text();
-      const ok = storage.importAll(text);
-      if (ok) {
-        show('Your data was imported', 'success');
-        navigate('/app', { replace: true });
-      } else {
-        show('That file could not be read. Was it exported from Aequimens?', 'info');
-      }
-    } catch {
-      show('That file could not be read. Was it exported from Aequimens?', 'info');
     }
   };
 
@@ -181,26 +151,10 @@ export function SettingsPage() {
 
       {/* Privacy & data */}
       <Section title="Your data" icon="Lock">
-        <Row label="Export local data" description="Download a JSON copy of everything stored on this device.">
-          <button onClick={exportData} className="btn-secondary !px-4 !py-2.5 text-sm">
-            <Icon name="Download" size={16} /> Export
+        <Row label="Backup & restore" description="Create a password-protected copy or move your data to another device.">
+          <button onClick={() => navigate('/app/backup')} className="btn-primary !px-4 !py-2.5 text-sm">
+            <Icon name="DatabaseBackup" size={16} /> Open
           </button>
-        </Row>
-        <Row label="Import local data" description="Restore a previously exported Aequimens backup file.">
-          <button onClick={() => importInputRef.current?.click()} className="btn-secondary !px-4 !py-2.5 text-sm">
-            <Icon name="RefreshCw" size={16} /> Import
-          </button>
-          <input
-            ref={importInputRef}
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void handleImportFile(file);
-              e.target.value = '';
-            }}
-          />
         </Row>
         <Row label="Reset progress" description="Clears check-ins, missions, streaks, and history.">
           <button onClick={() => setConfirmReset(true)} className="btn-secondary !px-4 !py-2.5 text-sm">
@@ -232,12 +186,16 @@ export function SettingsPage() {
           <span className="text-sm font-medium text-ink">Wellness disclaimer</span>
           <Icon name="ChevronRight" size={18} className="text-ink-soft" />
         </button>
+        <button onClick={() => navigate('/app/help')} className="flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-left hover:bg-silver-light/50">
+          <span className="text-sm font-medium text-ink">How Aequimens works</span>
+          <Icon name="ChevronRight" size={18} className="text-ink-soft" />
+        </button>
         <button onClick={() => setAboutOpen(true)} className="flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-left hover:bg-silver-light/50">
           <span className="text-sm font-medium text-ink">About Aequimens</span>
           <Icon name="ChevronRight" size={18} className="text-ink-soft" />
         </button>
         <Row label="App version" description="">
-          <span className="text-sm text-ink-soft">2.0.0</span>
+          <span className="text-sm text-ink-soft">2.1.0</span>
         </Row>
       </Section>
 
@@ -278,7 +236,7 @@ export function SettingsPage() {
             energy, stress, and everyday wellbeing. It provides general wellness insights and does not
             diagnose, treat, or replace medical or mental-health care.
           </p>
-          <p className="mt-4 text-xs text-silver-dark">Version 2.0.0</p>
+          <p className="mt-4 text-xs text-silver-dark">Version 2.1.0</p>
         </div>
       </Modal>
     </div>

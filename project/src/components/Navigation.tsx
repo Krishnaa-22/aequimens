@@ -15,6 +15,7 @@ const CORE_ITEMS: NavItem[] = [
   { to: '/app/check-in', label: 'Check-In', icon: 'Sparkles' },
   { to: '/app/missions', label: 'Missions', icon: 'ListChecks' },
   { to: '/app/progress', label: 'Progress', icon: 'TrendingUp' },
+  { to: '/app/search', label: 'Search', icon: 'Search' },
 ];
 
 const DAILY_ITEMS: NavItem[] = [
@@ -70,6 +71,12 @@ const PERSONAL_ITEMS: NavItem[] = [
     icon: 'Bell',
     description: 'Keep prompts useful, not noisy',
   },
+  {
+    to: '/app/backup',
+    label: 'Backup & Restore',
+    icon: 'DatabaseBackup',
+    description: 'Move or protect your local records',
+  },
 ];
 
 const EXPLORE_ITEMS: NavItem[] = [
@@ -97,6 +104,12 @@ const EXPLORE_ITEMS: NavItem[] = [
     icon: 'Lightbulb',
     description: 'Weekly reflections and personal patterns',
   },
+  {
+    to: '/app/help',
+    label: 'How It Works',
+    icon: 'HelpCircle',
+    description: 'Understand scores, privacy, and features',
+  },
 ];
 
 const SETTINGS_ITEM: NavItem = { to: '/app/settings', label: 'Settings', icon: 'Settings' };
@@ -109,6 +122,7 @@ const MOBILE_PRIMARY_ITEMS: NavItem[] = [
 ];
 const MOBILE_MORE_ITEMS: NavItem[] = [
   CORE_ITEMS[2],
+  CORE_ITEMS[4],
   ...DAILY_ITEMS.slice(1),
   ...PERSONAL_ITEMS,
   ...EXPLORE_ITEMS,

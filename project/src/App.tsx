@@ -31,6 +31,9 @@ const RoutinesPage = lazy(() => import('./pages/RoutinesPage').then((m) => ({ de
 const ReminderCenterPage = lazy(() => import('./pages/ReminderCenterPage').then((m) => ({ default: m.ReminderCenterPage })));
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const PrivacyLockPage = lazy(() => import('./pages/PrivacyLockPage').then((m) => ({ default: m.PrivacyLockPage })));
+const SearchPage = lazy(() => import('./pages/SearchPage').then((m) => ({ default: m.SearchPage })));
+const BackupPage = lazy(() => import('./pages/BackupPage').then((m) => ({ default: m.BackupPage })));
+const HelpPage = lazy(() => import('./pages/HelpPage').then((m) => ({ default: m.HelpPage })));
 
 function RouteLoading() {
   return (
@@ -80,6 +83,9 @@ export default function App() {
                   <Route path="reminders" element={<ReminderCenterPage />} />
                   <Route path="profile" element={<ProfilePage />} />
                   <Route path="privacy-lock" element={<PrivacyLockPage />} />
+                  <Route path="search" element={<SearchPage />} />
+                  <Route path="backup" element={<BackupPage />} />
+                  <Route path="help" element={<HelpPage />} />
                   <Route path="morning" element={<Navigate to="/app/morning-check-in" replace />} />
                   <Route path="evening" element={<Navigate to="/app/evening-check-in" replace />} />
                   <Route path="reset" element={<Navigate to="/app/quick-reset" replace />} />

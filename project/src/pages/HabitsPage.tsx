@@ -183,7 +183,7 @@ export function HabitsPage() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-olive-primary">Custom habits</p>
           <h1 className="mt-1 text-2xl font-bold text-ink md:text-3xl">Your own daily habits</h1>
-          <p className="mt-1.5 text-sm text-ink-soft">These sit alongside your generated missions.</p>
+          <p className="mt-1.5 text-sm text-ink-soft">These sit alongside your suggested missions.</p>
         </div>
         {!formOpen && (
           <button onClick={() => setFormOpen(true)} className="btn-primary shrink-0 !px-4 !py-2.5 text-sm">

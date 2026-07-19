@@ -77,6 +77,7 @@ export function DashboardPage() {
           </h1>
         </div>
         <div className="hidden items-center gap-2 sm:flex">
+          <button onClick={() => navigate('/app/search')} className="flex h-10 items-center gap-2 rounded-xl border border-silver bg-white px-3 text-sm font-medium text-ink-soft shadow-soft hover:border-olive-soft"><Icon name="Search" size={16} /> Search</button>
           <span className="chip border-olive-soft/40 bg-olive-tint/50 text-olive-deep"><Icon name="TrendingUp" size={13} /> {streak} day streak</span>
           <button onClick={() => navigate('/app/profile')} className="flex h-10 w-10 items-center justify-center rounded-xl border border-silver bg-white text-ink-soft shadow-soft hover:border-olive-soft"><Icon name="CircleUserRound" size={18} /></button>
         </div>
@@ -144,13 +145,14 @@ export function DashboardPage() {
             <h2 className="mt-1 text-lg font-bold text-ink">Keep the next step close</h2>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           {[
             { to: '/app/habits', icon: 'Droplets', label: 'Log habits', detail: `${completedHabits}/${todaysHabits.length || 0} today` },
             { to: '/app/timeline', icon: 'Calendar', label: 'Add context', detail: markers.length ? `${activeMarkers.length} active` : 'Mark today' },
             { to: '/app/journal', icon: 'NotebookPen', label: 'Journal', detail: todayJournal.length ? 'Entry saved' : 'Write privately' },
             { to: '/app/routines', icon: 'ListTodo', label: 'Routines', detail: routines.length ? `${routines.filter((r) => r.active).length} active` : 'Build one' },
             { to: '/app/goals', icon: 'Target', label: 'Goals', detail: goals.length ? `${goals.filter((g) => g.active).length} active` : 'Choose focus' },
+            { to: '/app/search', icon: 'Search', label: 'Search', detail: 'Find past notes' },
           ].map((item) => (
             <button key={item.to} onClick={() => navigate(item.to)} className="group rounded-3xl border border-silver bg-white p-4 text-left shadow-soft transition-all hover:-translate-y-0.5 hover:border-olive-soft/60 hover:shadow-soft-lg">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-olive-tint text-olive-primary transition-transform group-hover:scale-105"><Icon name={item.icon} size={18} /></span>
@@ -174,8 +176,8 @@ export function DashboardPage() {
           {missions.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-silver bg-silver-light/30 p-6 text-center">
               <Icon name="Compass" size={24} className="mx-auto text-olive-primary" />
-              <p className="mt-3 text-sm font-semibold text-ink">No path generated yet</p>
-              <p className="mt-1 text-xs leading-relaxed text-ink-soft">Complete today’s check-in to receive three personalised actions.</p>
+              <p className="mt-3 text-sm font-semibold text-ink">Today’s path is waiting</p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-soft">Complete today’s check-in to receive three focused actions.</p>
               <button onClick={() => navigate('/check-in')} className="btn-primary mt-4 !px-4 !py-2.5 text-sm">Begin check-in</button>
             </div>
           ) : (

@@ -2,6 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { Sidebar, MobileNavigation } from '../components/Navigation';
 import { PrivacyLockGate } from '../components/PrivacyLockGate';
 import { storage } from '../data/localStorage';
+import { ReminderScheduler } from '../components/ReminderScheduler';
 
 export function AppShell() {
   if (!storage.getProfile()) {
@@ -10,6 +11,7 @@ export function AppShell() {
 
   return (
     <PrivacyLockGate>
+      <ReminderScheduler />
       <div className="flex min-h-screen bg-canvas">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">

@@ -30,7 +30,6 @@ export const STORAGE_KEYS = {
   history: 'aequimens.history', // DaySummary[] oldest -> newest
   achievements: 'aequimens.achievements',
   onboarded: 'aequimens.onboarded',
-  // --- Added in the wellness-system expansion ---
   habits: 'aequimens.habits', // Habit[]
   habitLogs: 'aequimens.habitLogs', // HabitLog[]
   morningCheckIns: 'aequimens.morningCheckIns', // MorningCheckIn[]
@@ -43,6 +42,7 @@ export const STORAGE_KEYS = {
   routines: 'aequimens.routines', // Routine[]
   routineLogs: 'aequimens.routineLogs', // RoutineLog[]
   privacyLock: 'aequimens.privacyLock', // PrivacyLockSettings
+  reminderLog: 'aequimens.reminderLog',
   schemaVersion: 'aequimens.schemaVersion',
 } as const;
 
@@ -382,6 +382,18 @@ export const storage = {
     write(STORAGE_KEYS.privacyLock, settings);
   },
 
+
+  // ---- Reminder delivery log ----
+  getReminderLog(): Record<string, string> {
+    return read<Record<string, string>>(STORAGE_KEYS.reminderLog, {});
+  },
+  markReminderDelivered(reminderId: string, date: string): void {
+    write(STORAGE_KEYS.reminderLog, {
+      ...storage.getReminderLog(),
+      [reminderId]: date,
+    });
+  },
+
   // ---- Schema version ----
   getSchemaVersion(): number {
     return read<number>(STORAGE_KEYS.schemaVersion, 1);
@@ -408,6 +420,7 @@ export const storage = {
         STORAGE_KEYS.challenges,
         STORAGE_KEYS.journal,
         STORAGE_KEYS.routineLogs,
+        STORAGE_KEYS.reminderLog,
       ],
       'progress',
     );
@@ -436,6 +449,8 @@ export const storage = {
       if (parsed.version && parsed.version > 2) return false;
       const data = parsed?.data ?? (parsed as Record<string, unknown>);
       if (!data || typeof data !== 'object') return false;
+
+      Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
       (Object.entries(STORAGE_KEYS) as [string, string][]).forEach(([name, key]) => {
         if (name in data && data[name] !== null && data[name] !== undefined) {
           localStorage.setItem(key, JSON.stringify(data[name]));

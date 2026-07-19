@@ -153,7 +153,7 @@ export function MissionsPage() {
         </>
       )}
 
-      {/* Custom habits, shown alongside generated missions but visually distinct */}
+      {/* Custom habits, shown alongside suggested missions but visually distinct */}
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-ink">Your custom habits</h2>

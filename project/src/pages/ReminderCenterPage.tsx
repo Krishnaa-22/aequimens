@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Icon } from '../components/Icon';
 import { usePreferences, useProfile, useToast } from '../hooks';
+import { storage } from '../data/localStorage';
 
 type NotificationBooleanKey = 'morningCheckIn' | 'waterReminder' | 'outdoorReminder' | 'eveningReview' | 'sleepReminder' | 'weeklyReport';
 type NotificationTimeKey = 'morningCheckInTime' | 'waterReminderTime' | 'outdoorReminderTime' | 'eveningReviewTime' | 'sleepReminderTime' | 'weeklyReportTime';
@@ -10,14 +12,35 @@ const RULES: { key: NotificationBooleanKey; timeKey: NotificationTimeKey; label:
   { key: 'outdoorReminder', timeKey: 'outdoorReminderTime', label: 'Outdoor break', description: 'A small nudge to step outside.', icon: 'TreePine' },
   { key: 'eveningReview', timeKey: 'eveningReviewTime', label: 'Evening reflection', description: 'Close the day with a short reflection.', icon: 'MoonStar' },
   { key: 'sleepReminder', timeKey: 'sleepReminderTime', label: 'Sleep wind-down', description: 'Prepare for a calmer end to the day.', icon: 'Clock' },
-  { key: 'weeklyReport', timeKey: 'weeklyReportTime', label: 'Weekly reflection', description: 'Know when your weekly report is ready.', icon: 'Calendar' },
+  { key: 'weeklyReport', timeKey: 'weeklyReportTime', label: 'Weekly reflection', description: 'Shown on Sunday when your report is ready.', icon: 'Calendar' },
 ];
+
+async function showTestNotification(): Promise<boolean> {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+  const lock = storage.getPrivacyLock();
+  const title = lock.hideNotificationDetails ? 'Aequimens reminder' : 'Reminder test';
+  const body = lock.hideNotificationDetails ? 'Open Aequimens when you have a moment.' : 'Your reminders are ready to use on this device.';
+  const registration = await navigator.serviceWorker?.ready.catch(() => null);
+
+  if (registration) {
+    await registration.showNotification(title, {
+      body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      tag: 'aequimens-test-reminder',
+    });
+  } else {
+    new Notification(title, { body, icon: '/icons/icon-192.png' });
+  }
+  return true;
+}
 
 export function ReminderCenterPage() {
   const { prefs, save } = usePreferences();
   const { profile } = useProfile();
   const { show } = useToast();
   const enabledCount = RULES.filter((rule) => prefs.notifications[rule.key]).length;
+  const [permission, setPermission] = useState<string>('Notification' in window ? Notification.permission : 'unsupported');
 
   const updateEnabled = (key: NotificationBooleanKey, value: boolean) => {
     save({ ...prefs, notifications: { ...prefs.notifications, [key]: value } });
@@ -32,7 +55,13 @@ export function ReminderCenterPage() {
       return;
     }
     const result = await Notification.requestPermission();
+    setPermission(result);
     show(result === 'granted' ? 'Notification permission enabled' : 'Notification permission was not enabled', result === 'granted' ? 'success' : 'info');
+  };
+
+  const testReminder = async () => {
+    const sent = await showTestNotification();
+    show(sent ? 'Test reminder sent' : 'Enable notification permission first', sent ? 'success' : 'info');
   };
 
   return (
@@ -40,7 +69,7 @@ export function ReminderCenterPage() {
       <header className="mb-7">
         <p className="text-xs font-semibold uppercase tracking-wider text-olive-primary">Reminder centre</p>
         <h1 className="mt-1 text-2xl font-bold text-ink md:text-3xl">Keep reminders useful, not noisy</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-soft">Choose only the prompts that genuinely help. Browser support for scheduled PWA notifications varies by device.</p>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-soft">Choose only the prompts that genuinely help. Habit and routine reminders use the times set on those items.</p>
       </header>
 
       {enabledCount >= 5 && (
@@ -48,7 +77,7 @@ export function ReminderCenterPage() {
           <Icon name="Bell" size={18} className="mt-0.5 shrink-0 text-olive-primary" />
           <div>
             <p className="text-sm font-semibold text-ink">You have {enabledCount} reminders enabled</p>
-            <p className="mt-1 text-xs leading-relaxed text-ink-soft">Too many prompts can become easy to ignore. Consider keeping only your two or three most useful reminders.</p>
+            <p className="mt-1 text-xs leading-relaxed text-ink-soft">Too many prompts can become easy to ignore. Keeping two or three usually works better.</p>
           </div>
         </div>
       )}
@@ -75,9 +104,12 @@ export function ReminderCenterPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-ink">Device notification permission</p>
-            <p className="mt-1 text-xs leading-relaxed text-ink-soft">Times are stored locally. Permission is still required for the browser to show notifications.</p>
+            <p className="mt-1 text-xs leading-relaxed text-ink-soft">Current status: <strong className="text-ink">{permission}</strong>. Phone power-saving settings may delay browser reminders when the app is fully closed.</p>
           </div>
-          <button onClick={() => void requestPermission()} className="btn-secondary shrink-0 !px-4 !py-2.5 text-sm"><Icon name="Bell" size={16} /> Enable permission</button>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => void requestPermission()} className="btn-secondary !px-4 !py-2.5 text-sm"><Icon name="Bell" size={16} /> Enable</button>
+            <button onClick={() => void testReminder()} className="btn-primary !px-4 !py-2.5 text-sm"><Icon name="BellRing" size={16} /> Test</button>
+          </div>
         </div>
       </section>
 

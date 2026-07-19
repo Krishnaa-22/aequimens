@@ -17,7 +17,7 @@ import {
   ChevronLeft, ChevronDown, RefreshCw, Pencil, Trash2, Lock, Info, AlertTriangle,
   ArrowRight, ArrowLeft, Plus, XCircle, CheckCircle, Pause, Play, WifiOff,
   Target, BookOpen, ClipboardList, Timer, UserRound, KeyRound,
-  CircleUserRound, NotebookPen, ListTodo, Gauge, Sparkle,
+  CircleUserRound, NotebookPen, ListTodo, Gauge, Sparkle, Search, HelpCircle, DatabaseBackup, FileLock2, Upload, FileSearch, BellRing,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -42,7 +42,7 @@ const MAP: Record<string, LucideIcon> = {
   ChevronRight, ChevronLeft, ChevronDown, RefreshCw, Pencil, Trash2, Lock, Info,
   AlertTriangle, ArrowRight, ArrowLeft, Plus, XCircle, CheckCircle, Pause, Play, WifiOff,
   Target, BookOpen, ClipboardList, Timer, UserRound, KeyRound,
-  CircleUserRound, NotebookPen, ListTodo, Gauge, Sparkle,
+  CircleUserRound, NotebookPen, ListTodo, Gauge, Sparkle, Search, HelpCircle, DatabaseBackup, FileLock2, Upload, FileSearch, BellRing,
   HomeIcon,
 };
 

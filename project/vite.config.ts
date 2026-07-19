@@ -54,6 +54,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        importScripts: ['notification-handler.js'],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [/^\/api\//],
