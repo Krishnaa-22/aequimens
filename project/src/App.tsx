@@ -50,6 +50,10 @@ export default function App() {
             <Route path="challenges" element={<ChallengesPage />} />
             <Route path="quick-reset" element={<QuickResetPage />} />
             <Route path="monthly-story" element={<MonthlyStoryPage />} />
+            <Route path="morning" element={<Navigate to="/app/morning-check-in" replace />} />
+            <Route path="evening" element={<Navigate to="/app/evening-check-in" replace />} />
+            <Route path="reset" element={<Navigate to="/app/quick-reset" replace />} />
+            <Route path="story" element={<Navigate to="/app/monthly-story" replace />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
