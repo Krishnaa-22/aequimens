@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogoMark, Wordmark } from '../components/LogoMark';
+import { storage } from '../data/localStorage';
 
 export function SplashPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const t = setTimeout(() => navigate('/welcome'), 2200);
+    const t = setTimeout(() => navigate(storage.getProfile() ? '/app' : '/welcome'), 1800);
     return () => clearTimeout(t);
   }, [navigate]);
 

@@ -8,8 +8,7 @@ export function WelcomePage() {
   const navigate = useNavigate();
 
   const beginCheckIn = () => {
-    storage.setOnboarded(true);
-    navigate('/check-in');
+    navigate(storage.getProfile() ? '/check-in' : '/onboarding');
   };
 
   const hasProgress = storage.getHistory().length > 0;
@@ -49,14 +48,14 @@ export function WelcomePage() {
                   onClick={beginCheckIn}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 font-semibold text-olive-deep shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-soft-lg"
                 >
-                  Begin Check-In
+                  {storage.getProfile() ? 'Begin Check-In' : 'Set Up Aequimens'}
                   <Icon name="ArrowRight" size={18} />
                 </button>
                 <button
                   onClick={() => navigate('/app')}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/40 bg-white/10 px-6 py-3.5 font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/20"
                 >
-                  View My Progress
+                  {storage.getProfile() ? 'View My Progress' : 'Explore the App'}
                 </button>
               </div>
             </div>

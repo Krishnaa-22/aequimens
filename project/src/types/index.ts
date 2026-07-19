@@ -287,7 +287,9 @@ export type TimelineEntryType =
   | 'habit'
   | 'mission'
   | 'context'
-  | 'achievement';
+  | 'achievement'
+  | 'journal'
+  | 'routine';
 
 export interface TimelineEntry {
   id: string;
@@ -323,4 +325,121 @@ export interface MonthlyStory {
   biggestChallenge?: string;
   completionPercent?: number;
   highlight?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Personal profile and onboarding
+// ---------------------------------------------------------------------------
+
+export type LifeStage = 'student' | 'professional' | 'both' | 'other';
+export type CheckInPreference = 'morning' | 'evening' | 'both' | 'flexible';
+
+export interface UserProfile {
+  preferredName: string;
+  age: number;
+  lifeStage: LifeStage;
+  primaryGoals: string[];
+  wakeTime: string;
+  sleepTime: string;
+  checkInPreference: CheckInPreference;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Personal goals
+// ---------------------------------------------------------------------------
+
+export type GoalCategory =
+  | 'sleep'
+  | 'stress'
+  | 'energy'
+  | 'screen'
+  | 'routine'
+  | 'activity'
+  | 'hydration'
+  | 'outdoor'
+  | 'social'
+  | 'custom';
+
+export interface PersonalGoal {
+  id: string;
+  title: string;
+  category: GoalCategory;
+  target: string;
+  timeframeWeeks: number;
+  active: boolean;
+  createdAt: string;
+  completedAt?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Private journal
+// ---------------------------------------------------------------------------
+
+export interface JournalEntry {
+  id: string;
+  date: string;
+  text: string;
+  mood?: number;
+  contextTags: string[];
+  whatHelped: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Reusable routines
+// ---------------------------------------------------------------------------
+
+export type RoutineType = 'morning' | 'evening' | 'custom';
+
+export interface RoutineItem {
+  id: string;
+  title: string;
+}
+
+export interface Routine {
+  id: string;
+  name: string;
+  type: RoutineType;
+  items: RoutineItem[];
+  reminderTime?: string;
+  daysOfWeek: WeekdayIndex[];
+  active: boolean;
+  createdAt: string;
+}
+
+export interface RoutineLog {
+  routineId: string;
+  itemId: string;
+  date: string;
+  completed: boolean;
+  completedAt?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Local privacy lock
+// ---------------------------------------------------------------------------
+
+export interface PrivacyLockSettings {
+  enabled: boolean;
+  pinHash?: string;
+  autoLockMinutes: number;
+  hideNotificationDetails: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Derived personalisation insights
+// ---------------------------------------------------------------------------
+
+export interface BestStateProfile {
+  conditions: string[];
+  sampleSize: number;
+}
+
+export interface SimilarDayInsight {
+  date: string;
+  similarity: number;
+  summary: string;
 }

@@ -119,6 +119,24 @@ export function SettingsPage() {
         </Section>
       )}
 
+      <Section title="Personalisation" icon="CircleUserRound">
+        <Row label="Your profile" description="Edit your name, age, routine, and priority areas.">
+          <button onClick={() => navigate('/app/profile')} className="btn-secondary !px-4 !py-2.5 text-sm">
+            <Icon name="Pencil" size={16} /> Edit
+          </button>
+        </Row>
+        <Row label="Personal goals" description="Choose longer-term wellness directions.">
+          <button onClick={() => navigate('/app/goals')} className="btn-secondary !px-4 !py-2.5 text-sm">
+            <Icon name="Target" size={16} /> Open
+          </button>
+        </Row>
+        <Row label="Reminder centre" description="Manage all prompts in one calmer screen.">
+          <button onClick={() => navigate('/app/reminders')} className="btn-secondary !px-4 !py-2.5 text-sm">
+            <Icon name="Bell" size={16} /> Manage
+          </button>
+        </Row>
+      </Section>
+
       {/* Appearance */}
       <Section title="Appearance" icon="Sun">
         <Row label="Theme" description="Light theme keeps the app calm and clear.">
@@ -196,6 +214,14 @@ export function SettingsPage() {
         </Row>
       </Section>
 
+      <Section title="App privacy" icon="ShieldCheck">
+        <Row label="Local PIN lock" description="Add an optional privacy barrier on shared devices.">
+          <button onClick={() => navigate('/app/privacy-lock')} className="btn-secondary !px-4 !py-2.5 text-sm">
+            <Icon name="KeyRound" size={16} /> Configure
+          </button>
+        </Row>
+      </Section>
+
       {/* About / legal */}
       <Section title="About" icon="Info">
         <button onClick={() => setPrivacyOpen(true)} className="flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-left hover:bg-silver-light/50">
@@ -211,7 +237,7 @@ export function SettingsPage() {
           <Icon name="ChevronRight" size={18} className="text-ink-soft" />
         </button>
         <Row label="App version" description="">
-          <span className="text-sm text-ink-soft">1.0.0</span>
+          <span className="text-sm text-ink-soft">2.0.0</span>
         </Row>
       </Section>
 
@@ -252,7 +278,7 @@ export function SettingsPage() {
             energy, stress, and everyday wellbeing. It provides general wellness insights and does not
             diagnose, treat, or replace medical or mental-health care.
           </p>
-          <p className="mt-4 text-xs text-silver-dark">Version 1.0.0</p>
+          <p className="mt-4 text-xs text-silver-dark">Version 2.0.0</p>
         </div>
       </Modal>
     </div>

@@ -9,8 +9,10 @@ import {
   useAchievements,
   useContextMarkers,
   useToast,
+  useJournal,
+  useRoutines,
 } from '../hooks';
-import { formatLongDate, todayISO } from '../utils/format';
+import { formatLongDate, localDateISO, todayISO } from '../utils/format';
 import type { ContextMarkerType, TimelineEntry } from '../types';
 
 const CONTEXT_TYPES: { type: ContextMarkerType; label: string; icon: string }[] = [
@@ -39,7 +41,7 @@ function AddContextForm({ onClose }: { onClose: () => void }) {
       type,
       label: label.trim() || CONTEXT_TYPES.find((c) => c.type === type)?.label || 'Context',
       startDate: start,
-      endDate: end.toISOString().slice(0, 10),
+      endDate: localDateISO(end),
       createdAt: new Date().toISOString(),
     });
     show('Context marker added', 'success');
@@ -103,6 +105,8 @@ export function TimelinePage() {
   const { habits, logs } = useHabits();
   const { achievements } = useAchievements();
   const { markers, remove } = useContextMarkers();
+  const { entries: journalEntries } = useJournal();
+  const { routines, logs: routineLogs } = useRoutines();
   const [addingContext, setAddingContext] = useState(false);
 
   const entries: TimelineEntry[] = useMemo(() => {
@@ -166,6 +170,32 @@ export function TimelinePage() {
       }),
     );
 
+    journalEntries.forEach((entry) =>
+      list.push({
+        id: `journal_${entry.id}`,
+        date: entry.date,
+        type: 'journal',
+        title: 'Private journal entry',
+        detail: entry.text.slice(0, 90),
+        icon: 'NotebookPen',
+      }),
+    );
+
+    routineLogs
+      .filter((log) => log.completed)
+      .forEach((log) => {
+        const routine = routines.find((item) => item.id === log.routineId);
+        const routineItem = routine?.items.find((item) => item.id === log.itemId);
+        if (!routine || !routineItem) return;
+        list.push({
+          id: `routine_${log.routineId}_${log.itemId}_${log.date}`,
+          date: log.date,
+          type: 'routine',
+          title: `${routine.name}: ${routineItem.title}`,
+          icon: 'ListTodo',
+        });
+      });
+
     achievements
       .filter((a) => a.earned && a.earnedDate)
       .forEach((a) =>
@@ -179,7 +209,7 @@ export function TimelinePage() {
       );
 
     return list.sort((a, b) => b.date.localeCompare(a.date));
-  }, [checkIns, morningEntries, eveningEntries, logs, habits, markers, achievements]);
+  }, [checkIns, morningEntries, eveningEntries, logs, habits, markers, achievements, journalEntries, routineLogs, routines]);
 
   const grouped = useMemo(() => {
     const groups: Record<string, TimelineEntry[]> = {};
@@ -195,7 +225,7 @@ export function TimelinePage() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-olive-primary">Timeline</p>
           <h1 className="mt-1 text-2xl font-bold text-ink md:text-3xl">Your wellness timeline</h1>
-          <p className="mt-1.5 text-sm text-ink-soft">Check-ins, habits, missions, and context in one view.</p>
+          <p className="mt-1.5 text-sm text-ink-soft">Check-ins, habits, routines, journal entries, and context in one view.</p>
         </div>
         {!addingContext && (
           <button onClick={() => setAddingContext(true)} className="btn-secondary shrink-0 !px-4 !py-2.5 text-sm">

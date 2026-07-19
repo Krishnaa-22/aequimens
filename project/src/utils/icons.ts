@@ -16,6 +16,8 @@ import {
   Share2, Download, Copy, Heart, Scale, Award, Trophy, Calendar, ChevronRight,
   ChevronLeft, ChevronDown, RefreshCw, Pencil, Trash2, Lock, Info, AlertTriangle,
   ArrowRight, ArrowLeft, Plus, XCircle, CheckCircle, Pause, Play, WifiOff,
+  Target, BookOpen, ClipboardList, Timer, UserRound, KeyRound,
+  CircleUserRound, NotebookPen, ListTodo, Gauge, Sparkle,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -39,6 +41,8 @@ const MAP: Record<string, LucideIcon> = {
   Share2, Download, Copy, Heart, Scale, Award, Trophy, Calendar,
   ChevronRight, ChevronLeft, ChevronDown, RefreshCw, Pencil, Trash2, Lock, Info,
   AlertTriangle, ArrowRight, ArrowLeft, Plus, XCircle, CheckCircle, Pause, Play, WifiOff,
+  Target, BookOpen, ClipboardList, Timer, UserRound, KeyRound,
+  CircleUserRound, NotebookPen, ListTodo, Gauge, Sparkle,
   HomeIcon,
 };
 

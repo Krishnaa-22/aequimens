@@ -44,6 +44,34 @@ const DAILY_ITEMS: NavItem[] = [
   },
 ];
 
+
+const PERSONAL_ITEMS: NavItem[] = [
+  {
+    to: '/app/goals',
+    label: 'Personal Goals',
+    icon: 'Target',
+    description: 'Build a multi-week path around what matters',
+  },
+  {
+    to: '/app/journal',
+    label: 'Private Journal',
+    icon: 'NotebookPen',
+    description: 'Capture context and what helped',
+  },
+  {
+    to: '/app/routines',
+    label: 'Routine Builder',
+    icon: 'ListTodo',
+    description: 'Create repeatable morning and night routines',
+  },
+  {
+    to: '/app/reminders',
+    label: 'Reminder Centre',
+    icon: 'Bell',
+    description: 'Keep prompts useful, not noisy',
+  },
+];
+
 const EXPLORE_ITEMS: NavItem[] = [
   {
     to: '/app/challenges',
@@ -72,6 +100,7 @@ const EXPLORE_ITEMS: NavItem[] = [
 ];
 
 const SETTINGS_ITEM: NavItem = { to: '/app/settings', label: 'Settings', icon: 'Settings' };
+const PROFILE_ITEM: NavItem = { to: '/app/profile', label: 'Profile', icon: 'CircleUserRound' };
 const MOBILE_PRIMARY_ITEMS: NavItem[] = [
   CORE_ITEMS[0],
   CORE_ITEMS[1],
@@ -81,7 +110,9 @@ const MOBILE_PRIMARY_ITEMS: NavItem[] = [
 const MOBILE_MORE_ITEMS: NavItem[] = [
   CORE_ITEMS[2],
   ...DAILY_ITEMS.slice(1),
+  ...PERSONAL_ITEMS,
   ...EXPLORE_ITEMS,
+  PROFILE_ITEM,
   SETTINGS_ITEM,
 ];
 
@@ -136,10 +167,12 @@ export function Sidebar() {
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-3" aria-label="Primary">
         <SidebarSection label="Core" items={CORE_ITEMS} />
         <SidebarSection label="Daily tools" items={DAILY_ITEMS} />
+        <SidebarSection label="Personal system" items={PERSONAL_ITEMS} />
         <SidebarSection label="Explore" items={EXPLORE_ITEMS} />
       </nav>
 
       <div className="border-t border-silver/50 px-3 py-3">
+        <SidebarLink item={PROFILE_ITEM} />
         <SidebarLink item={SETTINGS_ITEM} />
         <div className="mx-2 mt-3 rounded-2xl border border-silver bg-olive-tint/40 p-3.5">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-olive-deep">Privacy</p>

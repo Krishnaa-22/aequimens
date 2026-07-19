@@ -155,8 +155,9 @@ function HabitForm({
   );
 }
 
+
 export function HabitsPage() {
-  const { habits, save, remove, toggleLog, isCompleted } = useHabits();
+  const { habits, save, remove, toggleLog, isCompleted, missedStreak } = useHabits();
   const { show } = useToast();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Habit | null>(null);
@@ -232,6 +233,8 @@ export function HabitsPage() {
                     }}
                     onPause={() => save({ ...h, active: false })}
                     onDelete={() => remove(h.id)}
+                    missedDays={missedStreak(h.id, today)}
+                    onMakeGentler={() => save({ ...h, target: gentlerTarget(h), difficulty: 'easy' })}
                   />
                 ))}
               {active
@@ -289,6 +292,8 @@ function HabitCard({
   onDelete,
   paused,
   notScheduledToday,
+  missedDays = 0,
+  onMakeGentler,
 }: {
   habit: Habit;
   completedToday: boolean;
@@ -298,50 +303,77 @@ function HabitCard({
   onDelete: () => void;
   paused?: boolean;
   notScheduledToday?: boolean;
+  missedDays?: number;
+  onMakeGentler?: () => void;
 }) {
   return (
-    <div
-      className={`flex items-center gap-3 rounded-2xl border-l-4 bg-white p-4 shadow-soft transition-all ${
-        paused ? 'border-l-silver-dark opacity-60' : 'border-l-olive-soft'
-      }`}
-    >
-      <button
-        type="button"
-        onClick={onToggle}
-        disabled={paused || notScheduledToday}
-        aria-label={completedToday ? 'Mark as not done' : 'Mark as done'}
-        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 transition-all ${
-          completedToday
-            ? 'border-olive-primary bg-olive-primary text-white'
-            : 'border-silver text-transparent hover:border-olive-soft/70'
-        } ${paused || notScheduledToday ? 'cursor-not-allowed' : ''}`}
+    <div>
+      <div
+        className={`flex items-center gap-3 rounded-2xl border-l-4 bg-white p-4 shadow-soft transition-all ${
+          paused ? 'border-l-silver-dark opacity-60' : 'border-l-olive-soft'
+        }`}
       >
-        <Icon name="Check" size={20} />
-      </button>
+        <button
+          type="button"
+          onClick={onToggle}
+          disabled={paused || notScheduledToday}
+          aria-label={completedToday ? 'Mark as not done' : 'Mark as done'}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 transition-all ${
+            completedToday
+              ? 'border-olive-primary bg-olive-primary text-white'
+              : 'border-silver text-transparent hover:border-olive-soft/70'
+          } ${paused || notScheduledToday ? 'cursor-not-allowed' : ''}`}
+        >
+          <Icon name="Check" size={20} />
+        </button>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-semibold text-ink">{habit.title}</p>
-          <span className="chip !py-0.5 !px-2 border-olive-soft/40 bg-olive-tint/50 text-[10px] text-olive-deep">Custom</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-sm font-semibold text-ink">{habit.title}</p>
+            <span className="chip !py-0.5 !px-2 border-olive-soft/40 bg-olive-tint/50 text-[10px] text-olive-deep">Custom</span>
+          </div>
+          <p className="mt-0.5 text-xs text-ink-soft">
+            {habit.target}
+            {habit.reminderTime ? ` · reminder ${habit.reminderTime}` : ''}
+            {notScheduledToday ? ' · not scheduled today' : ''}
+          </p>
         </div>
-        <p className="mt-0.5 text-xs text-ink-soft">
-          {habit.target}
-          {habit.reminderTime ? ` · reminder ${habit.reminderTime}` : ''}
-          {notScheduledToday ? ' · not scheduled today' : ''}
-        </p>
+
+        <div className="flex shrink-0 items-center gap-1">
+          <button onClick={onEdit} aria-label="Edit habit" className="rounded-lg p-2 text-ink-soft hover:bg-silver-light/60 hover:text-ink">
+            <Icon name="Pencil" size={16} />
+          </button>
+          <button onClick={onPause} aria-label={paused ? 'Resume habit' : 'Pause habit'} className="rounded-lg p-2 text-ink-soft hover:bg-silver-light/60 hover:text-ink">
+            <Icon name={paused ? 'Play' : 'Pause'} size={16} />
+          </button>
+          <button onClick={onDelete} aria-label="Delete habit" className="rounded-lg p-2 text-ink-soft hover:bg-silver-light/60 hover:text-olive-deep">
+            <Icon name="Trash2" size={16} />
+          </button>
+        </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1">
-        <button onClick={onEdit} aria-label="Edit habit" className="rounded-lg p-2 text-ink-soft hover:bg-silver-light/60 hover:text-ink">
-          <Icon name="Pencil" size={16} />
-        </button>
-        <button onClick={onPause} aria-label={paused ? 'Resume habit' : 'Pause habit'} className="rounded-lg p-2 text-ink-soft hover:bg-silver-light/60 hover:text-ink">
-          <Icon name={paused ? 'Play' : 'Pause'} size={16} />
-        </button>
-        <button onClick={onDelete} aria-label="Delete habit" className="rounded-lg p-2 text-ink-soft hover:bg-silver-light/60 hover:text-olive-deep">
-          <Icon name="Trash2" size={16} />
-        </button>
-      </div>
+      {missedDays >= 4 && !paused && !notScheduledToday && onMakeGentler && (
+        <div className="mt-2 flex flex-col gap-3 rounded-2xl border border-olive-soft/40 bg-olive-tint/45 p-3.5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold text-olive-deep">This habit may be too demanding right now</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">You have missed it for {missedDays} recent days. A smaller target can protect consistency without guilt.</p>
+          </div>
+          <button type="button" onClick={onMakeGentler} className="btn-secondary shrink-0 !px-3 !py-2 text-xs">Make gentler</button>
+        </div>
+      )}
     </div>
   );
+}
+
+function gentlerTarget(habit: Habit): string {
+  switch (habit.category) {
+    case 'activity': return '10 minutes';
+    case 'hydration': return '2 glasses';
+    case 'sleep': return '15 minutes earlier';
+    case 'screen': return '15 minutes less';
+    case 'outdoor': return '5 minutes';
+    case 'social': return 'Send one message';
+    case 'meals': return 'One regular meal';
+    default: return 'A smaller version';
+  }
 }

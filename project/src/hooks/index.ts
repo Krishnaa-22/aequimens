@@ -15,6 +15,12 @@ import type {
   EveningCheckIn,
   ContextMarker,
   ChallengeParticipation,
+  UserProfile,
+  PersonalGoal,
+  JournalEntry,
+  Routine,
+  RoutineLog,
+  PrivacyLockSettings,
 } from '../types';
 import { DEFAULT_PREFERENCES, buildMockHistory } from '../data/mockData';
 import { DEMO_MODE_ENABLED } from '../config';
@@ -356,4 +362,101 @@ export function useChallenges() {
     [refresh],
   );
   return { challenges, save };
+}
+
+
+// ---------------------------------------------------------------------------
+// Profile, goals, journal, routines, and privacy lock
+// ---------------------------------------------------------------------------
+
+export function useProfile() {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const refresh = useCallback(() => setProfile(storage.getProfile()), []);
+  useEffect(() => {
+    refresh();
+    return subscribeToStorage(refresh);
+  }, [refresh]);
+  const save = useCallback((value: UserProfile) => {
+    storage.saveProfile(value);
+    setProfile(value);
+  }, []);
+  return { profile, save, refresh };
+}
+
+export function useGoals() {
+  const [goals, setGoals] = useState<PersonalGoal[]>([]);
+  const refresh = useCallback(() => setGoals(storage.getGoals()), []);
+  useEffect(() => {
+    refresh();
+    return subscribeToStorage(refresh);
+  }, [refresh]);
+  const save = useCallback((goal: PersonalGoal) => {
+    storage.saveGoal(goal);
+    refresh();
+  }, [refresh]);
+  const remove = useCallback((id: string) => {
+    storage.deleteGoal(id);
+    refresh();
+  }, [refresh]);
+  return { goals, save, remove, refresh };
+}
+
+export function useJournal() {
+  const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const refresh = useCallback(() => setEntries(storage.getJournalEntries()), []);
+  useEffect(() => {
+    refresh();
+    return subscribeToStorage(refresh);
+  }, [refresh]);
+  const save = useCallback((entry: JournalEntry) => {
+    storage.saveJournalEntry(entry);
+    refresh();
+  }, [refresh]);
+  const remove = useCallback((id: string) => {
+    storage.deleteJournalEntry(id);
+    refresh();
+  }, [refresh]);
+  return { entries, save, remove, refresh };
+}
+
+export function useRoutines() {
+  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [logs, setLogs] = useState<RoutineLog[]>([]);
+  const refresh = useCallback(() => {
+    setRoutines(storage.getRoutines());
+    setLogs(storage.getRoutineLogs());
+  }, []);
+  useEffect(() => {
+    refresh();
+    return subscribeToStorage(refresh);
+  }, [refresh]);
+  const save = useCallback((routine: Routine) => {
+    storage.saveRoutine(routine);
+    refresh();
+  }, [refresh]);
+  const remove = useCallback((id: string) => {
+    storage.deleteRoutine(id);
+    refresh();
+  }, [refresh]);
+  const toggleItem = useCallback((routineId: string, itemId: string, date: string, completed: boolean) => {
+    storage.setRoutineLog(routineId, itemId, date, completed);
+    refresh();
+  }, [refresh]);
+  const isItemCompleted = useCallback((routineId: string, itemId: string, date: string) =>
+    logs.some((log) => log.routineId === routineId && log.itemId === itemId && log.date === date && log.completed), [logs]);
+  return { routines, logs, save, remove, toggleItem, isItemCompleted, refresh };
+}
+
+export function usePrivacyLock() {
+  const [settings, setSettings] = useState<PrivacyLockSettings>(storage.getPrivacyLock());
+  const refresh = useCallback(() => setSettings(storage.getPrivacyLock()), []);
+  useEffect(() => {
+    refresh();
+    return subscribeToStorage(refresh);
+  }, [refresh]);
+  const save = useCallback((value: PrivacyLockSettings) => {
+    storage.savePrivacyLock(value);
+    setSettings(value);
+  }, []);
+  return { settings, save, refresh };
 }

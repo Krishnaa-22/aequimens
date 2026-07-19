@@ -12,6 +12,12 @@ import type {
   EveningCheckIn,
   ContextMarker,
   ChallengeParticipation,
+  UserProfile,
+  PersonalGoal,
+  JournalEntry,
+  Routine,
+  RoutineLog,
+  PrivacyLockSettings,
 } from '../types';
 import { evaluateAchievements } from '../engine/insights';
 
@@ -31,6 +37,13 @@ export const STORAGE_KEYS = {
   eveningCheckIns: 'aequimens.eveningCheckIns', // EveningCheckIn[]
   contextMarkers: 'aequimens.contextMarkers', // ContextMarker[]
   challenges: 'aequimens.challenges', // ChallengeParticipation[]
+  profile: 'aequimens.profile', // UserProfile
+  goals: 'aequimens.goals', // PersonalGoal[]
+  journal: 'aequimens.journal', // JournalEntry[]
+  routines: 'aequimens.routines', // Routine[]
+  routineLogs: 'aequimens.routineLogs', // RoutineLog[]
+  privacyLock: 'aequimens.privacyLock', // PrivacyLockSettings
+  schemaVersion: 'aequimens.schemaVersion',
 } as const;
 
 export const AEQUIMENS_STORAGE_EVENT = 'aequimens-storage-change';
@@ -290,6 +303,93 @@ export const storage = {
     write(STORAGE_KEYS.challenges, all);
   },
 
+
+  // ---- Personal profile ----
+  getProfile(): UserProfile | null {
+    return read<UserProfile | null>(STORAGE_KEYS.profile, null);
+  },
+  saveProfile(profile: UserProfile): void {
+    write(STORAGE_KEYS.profile, profile);
+    storage.setOnboarded(true);
+  },
+
+  // ---- Personal goals ----
+  getGoals(): PersonalGoal[] {
+    return read<PersonalGoal[]>(STORAGE_KEYS.goals, []);
+  },
+  saveGoal(goal: PersonalGoal): void {
+    const all = storage.getGoals().filter((item) => item.id !== goal.id);
+    all.push(goal);
+    write(STORAGE_KEYS.goals, all);
+  },
+  deleteGoal(id: string): void {
+    write(STORAGE_KEYS.goals, storage.getGoals().filter((goal) => goal.id !== id));
+  },
+
+  // ---- Private journal ----
+  getJournalEntries(): JournalEntry[] {
+    return read<JournalEntry[]>(STORAGE_KEYS.journal, []);
+  },
+  saveJournalEntry(entry: JournalEntry): void {
+    const all = storage.getJournalEntries().filter((item) => item.id !== entry.id);
+    all.push(entry);
+    all.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    write(STORAGE_KEYS.journal, all);
+  },
+  deleteJournalEntry(id: string): void {
+    write(STORAGE_KEYS.journal, storage.getJournalEntries().filter((entry) => entry.id !== id));
+  },
+
+  // ---- Reusable routines ----
+  getRoutines(): Routine[] {
+    return read<Routine[]>(STORAGE_KEYS.routines, []);
+  },
+  saveRoutine(routine: Routine): void {
+    const all = storage.getRoutines().filter((item) => item.id !== routine.id);
+    all.push(routine);
+    write(STORAGE_KEYS.routines, all);
+  },
+  deleteRoutine(id: string): void {
+    write(STORAGE_KEYS.routines, storage.getRoutines().filter((routine) => routine.id !== id));
+    write(STORAGE_KEYS.routineLogs, storage.getRoutineLogs().filter((log) => log.routineId !== id));
+  },
+  getRoutineLogs(): RoutineLog[] {
+    return read<RoutineLog[]>(STORAGE_KEYS.routineLogs, []);
+  },
+  setRoutineLog(routineId: string, itemId: string, date: string, completed: boolean): void {
+    const all = storage.getRoutineLogs().filter(
+      (log) => !(log.routineId === routineId && log.itemId === itemId && log.date === date),
+    );
+    all.push({
+      routineId,
+      itemId,
+      date,
+      completed,
+      completedAt: completed ? new Date().toISOString() : undefined,
+    });
+    write(STORAGE_KEYS.routineLogs, all);
+  },
+
+  // ---- Privacy lock ----
+  getPrivacyLock(): PrivacyLockSettings {
+    return read<PrivacyLockSettings>(STORAGE_KEYS.privacyLock, {
+      enabled: false,
+      autoLockMinutes: 5,
+      hideNotificationDetails: true,
+    });
+  },
+  savePrivacyLock(settings: PrivacyLockSettings): void {
+    write(STORAGE_KEYS.privacyLock, settings);
+  },
+
+  // ---- Schema version ----
+  getSchemaVersion(): number {
+    return read<number>(STORAGE_KEYS.schemaVersion, 1);
+  },
+  setSchemaVersion(version: number): void {
+    write(STORAGE_KEYS.schemaVersion, version);
+  },
+
   // ---- Danger zone ----
   clearProgress(): void {
     removeOwnedKeys(
@@ -306,6 +406,8 @@ export const storage = {
         STORAGE_KEYS.eveningCheckIns,
         STORAGE_KEYS.contextMarkers,
         STORAGE_KEYS.challenges,
+        STORAGE_KEYS.journal,
+        STORAGE_KEYS.routineLogs,
       ],
       'progress',
     );
@@ -320,7 +422,7 @@ export const storage = {
     (Object.entries(STORAGE_KEYS) as [string, string][]).forEach(([name, key]) => {
       data[name] = read(key, null);
     });
-    return JSON.stringify({ app: 'aequimens', exportedAt: new Date().toISOString(), data }, null, 2);
+    return JSON.stringify({ app: 'aequimens', version: 2, exportedAt: new Date().toISOString(), data }, null, 2);
   },
   /**
    * Imports a previously exported Aequimens backup. Only recognised
@@ -329,7 +431,9 @@ export const storage = {
    */
   importAll(json: string): boolean {
     try {
-      const parsed = JSON.parse(json) as { app?: string; data?: Record<string, unknown> };
+      const parsed = JSON.parse(json) as { app?: string; version?: number; data?: Record<string, unknown> };
+      if (parsed.app && parsed.app !== 'aequimens') return false;
+      if (parsed.version && parsed.version > 2) return false;
       const data = parsed?.data ?? (parsed as Record<string, unknown>);
       if (!data || typeof data !== 'object') return false;
       (Object.entries(STORAGE_KEYS) as [string, string][]).forEach(([name, key]) => {

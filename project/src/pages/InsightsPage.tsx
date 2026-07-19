@@ -6,6 +6,8 @@ import { WeeklyReportCard } from '../components/WeeklyReportCard';
 import { EmptyState } from '../components/Feedback';
 import { Icon } from '../components/Icon';
 import { detectTriggers, buildWeeklyReport } from '../engine/insights';
+import { buildBestStateProfile, findSimilarDay } from '../engine/personalization';
+import { todayISO } from '../utils/format';
 import { ShareableCard } from './ShareableCard';
 import {
   MIN_DAYS_FOR_PATTERNS,
@@ -21,6 +23,9 @@ export function InsightsPage() {
 
   const triggers = useMemo(() => detectTriggers(history), [history]);
   const report = useMemo(() => buildWeeklyReport(history), [history]);
+  const bestState = useMemo(() => buildBestStateProfile(history), [history]);
+  const todaySummary = history.find((day) => day.date === todayISO()) ?? null;
+  const similarDay = useMemo(() => findSimilarDay(history, todaySummary), [history, todaySummary]);
 
   const negative = triggers.filter((trigger) => trigger.type === 'negative');
   const positive = triggers.filter((trigger) => trigger.type === 'positive');
@@ -111,6 +116,49 @@ export function InsightsPage() {
               </>
             )}
           </section>
+
+          <section className="mb-6">
+            <h2 className="mb-3 text-sm font-semibold text-ink">Your best-state profile</h2>
+            {bestState ? (
+              <div className="rounded-3xl border border-silver bg-gradient-to-br from-olive-tint/70 via-white to-silver-light/40 p-5 shadow-soft">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-olive-primary shadow-soft">
+                    <Icon name="Gauge" size={19} />
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-olive-primary">Based on your strongest days</p>
+                    <h3 className="mt-1 text-lg font-bold text-ink">You tend to feel your best when…</h3>
+                    <ul className="mt-3 space-y-2">
+                      {bestState.conditions.map((condition) => (
+                        <li key={condition} className="flex items-start gap-2 text-sm leading-relaxed text-ink-soft">
+                          <Icon name="CheckCircle" size={15} className="mt-0.5 shrink-0 text-olive-primary" />
+                          <span>{condition}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-3 text-[11px] text-ink-soft">Built from {bestState.sampleSize} of your strongest logged days. This is a personal observation, not medical evidence.</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <DataLockedState icon="Gauge" title="Your best-state profile is still forming" current={history.length} required={14} />
+            )}
+          </section>
+
+          {similarDay && (
+            <section className="mb-6">
+              <h2 className="mb-3 text-sm font-semibold text-ink">Similar-day memory</h2>
+              <div className="rounded-2xl border border-silver bg-white p-5 shadow-soft">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-olive-tint text-olive-primary"><Icon name="Calendar" size={18} /></span>
+                  <div>
+                    <p className="text-sm font-semibold text-ink">{similarDay.similarity}% similar to a previous day</p>
+                    <p className="mt-1 text-sm leading-relaxed text-ink-soft">{similarDay.summary}</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
           <section className="mb-6">
             <h2 className="mb-3 text-sm font-semibold text-ink">Achievements</h2>
